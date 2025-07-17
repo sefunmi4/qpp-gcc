@@ -1,5 +1,8 @@
-Thanks for taking the time to contribute to GCC! Please be advised that if you are
-viewing this on `github.com`, that the mirror there is unofficial and unmonitored.
-The GCC community does not use `github.com` for their contributions. Instead, we use
-a mailing list (`gcc-patches@gcc.gnu.org`) for code submissions, code reviews, and
-bug reports. Please send patches there instead.
+Thank you for contributing to this GCC fork!
+
+- Create your changes in a feature branch off of `main`.
+- Build with CMake and run `ctest` before submitting.
+- Provide a clear description of your changes in this pull request.
+
+Please make sure your contribution follows the [GCC coding standards](https://gcc.gnu.org/codingconventions.html).
+
