@@ -7,7 +7,9 @@ new language constructs and tooling to support quantum-aware C++ development.
 ## Q++ Highlights
 
 - **`qstruct` and `qclass`** &mdash; Data structures for quantum state
-  storage and manipulation.
+  storage and manipulation.  See
+  [`include/qpp/qstruct.hpp`](include/qpp/qstruct.hpp) for
+  reference implementations.
 - **Probabilistic `bool`** &mdash; Boolean values that represent
   quantum superposition probabilities.
 - **Bitwise gate macros** &mdash; Convenience wrappers for common
