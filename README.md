@@ -11,7 +11,10 @@ new language constructs and tooling to support quantum-aware C++ development.
   [`include/qpp/qstruct.hpp`](include/qpp/qstruct.hpp) for
   reference implementations.
 - **Probabilistic `bool`** &mdash; Boolean values that represent
-  quantum superposition probabilities.
+  quantum superposition probabilities. The `qpp/pbool.h` header
+  implements a simple `pbool` type that stores the likelihood of
+  a value being `true` and provides logical operations that combine
+  those probabilities.
 - **Bitwise gate macros** &mdash; Convenience wrappers for common
   quantum logic gates such as `H`, `X`, `CNOT` and others.
 - **Hardware API stubs** &mdash; Placeholder interfaces intended for
@@ -40,6 +43,16 @@ ctest
 
 # Optionally install
 cmake --install .
+```
+
+### Example
+
+After building, you can compile the demonstration program in
+`examples/pbool_demo.cpp`:
+
+```sh
+g++ -Iinclude examples/pbool_demo.cpp -o pbool_demo
+./pbool_demo
 ```
 
 Refer to the upstream GCC README for additional information about the
