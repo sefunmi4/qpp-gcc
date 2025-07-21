@@ -19,6 +19,16 @@ new language constructs and tooling to support quantum-aware C++ development.
   quantum logic gates such as `H`, `X`, `CNOT` and others.
 - **Hardware API stubs** &mdash; Placeholder interfaces intended for
   integration with future quantum devices.
+- **`cstruct` and `cclass`** &mdash; Classical-only variants used for
+  hybrid modeling alongside quantum structures.
+- **`qregister` and `cregister`** &mdash; Explicit register allocation or
+  compiler inference when `register` is left as `auto`.
+- **`task<\*>` annotations** &mdash; Functions targeted to the QPU, CPU or
+  determined automatically.
+- **`__qasm` blocks** &mdash; Inject raw QASM instructions within the
+  source code.
+- **`#explain` directive** &mdash; Request runtime explanations for upcoming
+  instructions.
 
 These features are experimental and not part of upstream GCC.
 

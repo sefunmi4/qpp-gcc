@@ -1,0 +1,10 @@
+compiler:
+  simplification_pass:
+    circuit_simplification: Remove redundant gates and fuse adjacents.
+    pattern_detection: Detect common patterns like QFT or Grover.
+  hardware_profile_enforcement:
+    warn_when_exceeding_limits: Warn if circuits exceed device limits (qubit count, depth, etc.).
+  resource_estimator:
+    memory_usage: Predict memory usage and steps during compilation.
+  backend_hints:
+    annotations: Parse annotations such as @dense or @clifford to influence runtime paths.

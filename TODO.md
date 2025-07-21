@@ -13,4 +13,8 @@
 - Support conditional gates
 - Integrate with hardware backends
 - Improve scheduler controls
+- Compiler front-end parses simple control flow and emits an intermediate
+  representation used by `qpp-run`.
+- `qpp-run` executes that IR via the scheduler and wavefunction backend,
+  supporting conditional gates.
 
