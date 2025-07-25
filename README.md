@@ -19,6 +19,8 @@ new language constructs and tooling to support quantum-aware C++ development.
   quantum logic gates such as `H`, `X`, `CNOT` and others.
 - **Hardware API stubs** &mdash; Placeholder interfaces intended for
   integration with future quantum devices.
+- **Priority-aware scheduler** &mdash; The `qpp::Scheduler` manages
+  `task<*>` functions and supports pause/resume semantics.
 - **`cstruct` and `cclass`** &mdash; Classical-only variants used for
   hybrid modeling alongside quantum structures.
 - **`qregister` and `cregister`** &mdash; Explicit register allocation or
@@ -73,6 +75,9 @@ representation of Q++ constructs. Run it on the provided sample file:
 ```sh
 python3 contrib/qpp_parse_ir.py examples/qpp_parse_example.qpp
 ```
+
+Additional design notes can be found in the files under
+`docs/architecture`, covering the frontend, runtime and hardware API.
 
 Refer to the upstream GCC README for additional information about the
 compiler and licensing.

@@ -8,3 +8,27 @@ compiler:
     memory_usage: Predict memory usage and steps during compilation.
   backend_hints:
     annotations: Parse annotations such as @dense or @clifford to influence runtime paths.
+runtime:
+  memory_optimization:
+    sparse_wavefunction_storage: Use sparse data structures when possible.
+    fixed_point_precision: Optionally store amplitudes as fixed point.
+    quidd_compression: Support QuIDD based representation.
+    low_rank_factorization: Factorize large states into low rank terms.
+    disk_paging: Spill very large states to disk.
+  gate_application:
+    gate_fusion: Combine consecutive gates before simulation.
+    sparse_matrix_mult: Sparse multiplication kernels.
+    simd_multithreaded: Utilize SIMD and threads for core kernels.
+    gpu_offload: Allow GPU acceleration when available.
+  simulation_modes:
+    entanglement_forging: Approximate highly entangled sections.
+    clifford_detection: Detect Clifford-only circuits for fast paths.
+    dynamic_switch: Change simulator backend at runtime.
+    timeout_partitioning: Split execution to respect timeouts.
+  debugging_tools:
+    memory_tracker: Track simulator memory usage over time.
+    amplitude_heatmap: Visualize wavefunction amplitudes.
+    gate_profiling: Measure per-gate execution time.
+    branch_map: Show probability branching structure.
+  developer_experience:
+    explain_directive: Emit runtime explanations via #explain.

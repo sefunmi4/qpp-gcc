@@ -1,0 +1,32 @@
+# Runtime Overview
+
+This document describes the prototype runtime environment used by Q++.
+It complements the frontend overview and focuses on task execution and
+hardware integration.
+
+## Scheduler
+
+The `qpp::Scheduler` class manages a list of tasks. Each task carries a
+priority and may be paused or resumed. When `run()` is invoked the tasks
+are executed in priority order. This simple model is intended to mimic a
+more complete quantum/classical scheduler that would handle device
+selection and probabilistic control flow.
+
+## Registers
+
+`qregister` and `cregister` provide explicit quantum and classical
+storage. A `qregister` wraps a `qclass` instance and exposes import and
+export helpers so that state can be saved or restored. `cregister` stores
+ordinary integer bits for hybrid algorithms.
+
+## Raw Gate Injection
+
+Code may contain `__qasm { ... }` blocks. The parser collects the
+contents of these blocks and the runtime forwards them unchanged to the
+selected backend.
+
+## Device Stubs
+
+`HardwareStub` is a minimal backend that simply collects emitted QIR
+strings. It serves as a placeholder until real devices are connected.
+
