@@ -16,7 +16,7 @@ new language constructs and tooling to support quantum-aware C++ development.
   a value being `true` and provides logical operations that combine
   those probabilities.
 - **Bitwise gate macros** &mdash; Convenience wrappers for common
-  quantum logic gates such as `H`, `X`, `CNOT` and others.
+  quantum logic gates such as `H`, `X`, `Y`, `Z`, `CNOT` and `CCX`.
 - **Hardware API stubs** &mdash; Placeholder interfaces intended for
   integration with future quantum devices.
 - **Priority-aware scheduler** &mdash; The `qpp::Scheduler` manages
