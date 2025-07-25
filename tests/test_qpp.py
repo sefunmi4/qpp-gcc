@@ -61,6 +61,26 @@ int main() {
         self.assertEqual(data['tasks'][0]['target'], 'QPU')
         self.assertEqual(len(data['qasm']), 1)
 
+    def test_measure_pbool(self):
+        code = r"""
+#include <iostream>
+#include "qpp/qstruct.hpp"
+int main() {
+    qpp::qclass qc(1);
+    qc.apply_h(0);
+    auto p = qc.measure(0);
+    std::cout << p.probability() << '\n';
+    return 0;
+}
+"""
+        with tempfile.TemporaryDirectory() as tmp:
+            src = Path(tmp) / 'meas.cpp'
+            src.write_text(code)
+            exe = Path(tmp) / 'meas'
+            subprocess.run(['g++', '-I', str(include_dir), str(src), '-o', str(exe)], check=True)
+            result = subprocess.run([str(exe)], check=True, capture_output=True, text=True)
+            self.assertTrue(result.stdout.startswith('0.5'))
+
     def test_features_file(self):
         text = (root_dir / 'features.yaml').read_text()
         self.assertIn('circuit_simplification', text)

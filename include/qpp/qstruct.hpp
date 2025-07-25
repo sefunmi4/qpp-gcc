@@ -5,6 +5,7 @@
 #include <vector>
 #include <cstddef>
 #include <cmath>
+#include "pbool.h"
 
 namespace qpp {
 
@@ -118,6 +119,15 @@ public:
                 std::swap(state.amplitude[i], state.amplitude[j]);
             }
         }
+    }
+
+    /// Return probability that the given qubit is measured as 1
+    pbool measure(size_t qubit) const {
+        double p1 = 0.0;
+        for (std::size_t i = 0; i < state.amplitude.size(); ++i)
+            if ((i >> qubit) & 1)
+                p1 += std::norm(state.amplitude[i]);
+        return pbool(p1);
     }
 
 private:
