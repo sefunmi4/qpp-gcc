@@ -7,7 +7,8 @@ hardware integration.
 ## Scheduler
 
 The `qpp::Scheduler` class manages a list of tasks. Each task carries a
-priority and may be paused or resumed. When `run()` is invoked the tasks
+priority and may be paused or resumed. Tasks can also be removed,
+cleared, or reprioritized at runtime. When `run()` is invoked the tasks
 are executed in priority order. This simple model is intended to mimic a
 more complete quantum/classical scheduler that would handle device
 selection and probabilistic control flow.

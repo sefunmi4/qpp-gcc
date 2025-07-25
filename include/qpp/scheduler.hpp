@@ -29,6 +29,26 @@ public:
         tasks.push_back({fn, priority, false});
     }
 
+    /// Remove a task by index
+    void remove(std::size_t index) {
+        std::lock_guard<std::mutex> lock(tasks_mutex);
+        if (index < tasks.size())
+            tasks.erase(tasks.begin() + index);
+    }
+
+    /// Change the priority of a task
+    void set_priority(std::size_t index, int priority) {
+        std::lock_guard<std::mutex> lock(tasks_mutex);
+        if (index < tasks.size())
+            tasks[index].priority = priority;
+    }
+
+    /// Remove all tasks
+    void clear() {
+        std::lock_guard<std::mutex> lock(tasks_mutex);
+        tasks.clear();
+    }
+
     /// Execute all tasks in priority order
     void run() {
         std::vector<Task> local;
