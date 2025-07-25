@@ -8,6 +8,8 @@ compiler:
     memory_usage: Predict memory usage and steps during compilation.
   backend_hints:
     annotations: Parse annotations such as @dense or @clifford to influence runtime paths.
+  llvm_ir_output:
+    qir_metadata: Emit QIR with probability metadata in the LLVM backend.
 runtime:
   memory_optimization:
     sparse_wavefunction_storage: Use sparse data structures when possible.
@@ -37,3 +39,9 @@ runtime:
     pauli_z: Implement single-qubit Z gate.
     controlled_x: Controlled-X (CNOT) gate via bitwise ^.
     toffoli: Controlled-controlled-X gate via bitwise &.
+  research_options:
+    periodicity_filtering: Exploit periodic structure when present.
+    spacetime_slicing: Split large circuits into spacetime slices.
+    pde_simulation_paths: Explore PDE-based simulation algorithms.
+    resonance_zone_caching: Cache states in resonance zones.
+    crossover_simulation: Blend classical and quantum simulation techniques.

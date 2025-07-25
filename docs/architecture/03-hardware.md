@@ -8,6 +8,12 @@ The runtime emits QIR strings when executing tasks. Real backends would
 translate this intermediate form to device specific commands. For now
 `HardwareStub` simply stores the strings for inspection.
 
+The compiler attaches probability metadata to the emitted QIR so that
+hardware schedulers can make informed decisions.  Hardware profiles
+describe qubit counts, supported gates and rate limits using YAML.  A
+priority-aware scheduler may pause and resume tasks based on these
+profiles.
+
 The API is intentionally minimal:
 
 ```cpp

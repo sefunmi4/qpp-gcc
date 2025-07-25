@@ -37,6 +37,9 @@ qstruct Token { qbit state; int index; };
 ```
 
 Structures containing quantum members exhibit probabilistic behavior and are tracked by the scheduler.
+Classical-only variants `cstruct` and `cclass` are available when no
+quantum state is required.  They behave like their quantum counterparts
+but omit amplitude storage.
 
 ## Boolean and Bitwise Behavior
 
