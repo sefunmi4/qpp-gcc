@@ -12,6 +12,11 @@ are executed in priority order. This simple model is intended to mimic a
 more complete quantum/classical scheduler that would handle device
 selection and probabilistic control flow.
 
+All public methods are protected by a mutex so that tasks may be added,
+paused or resumed from multiple threads. This ensures thread safety when
+using `task<CPU>`, `task<QPU>`, `task<AUTO>` or `task<MIXED>` functions
+across different components.
+
 ## Registers
 
 `qregister` and `cregister` provide explicit quantum and classical

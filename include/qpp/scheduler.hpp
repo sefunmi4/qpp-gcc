@@ -5,6 +5,7 @@
 #include <queue>
 #include <vector>
 #include <cstddef>
+#include <mutex>
 
 namespace qpp {
 
@@ -20,17 +21,24 @@ struct Task {
 /// Priority-aware task scheduler with pause/resume
 class Scheduler {
     std::vector<Task> tasks;
+    std::mutex tasks_mutex;
 public:
     /// Add a task with given priority
     void add(TaskFn fn, int priority = 0) {
+        std::lock_guard<std::mutex> lock(tasks_mutex);
         tasks.push_back({fn, priority, false});
     }
 
     /// Execute all tasks in priority order
     void run() {
-        std::sort(tasks.begin(), tasks.end(),
+        std::vector<Task> local;
+        {
+            std::lock_guard<std::mutex> lock(tasks_mutex);
+            local = tasks;
+        }
+        std::sort(local.begin(), local.end(),
                   [](const Task& a, const Task& b) { return a.priority > b.priority; });
-        for (auto& t : tasks) {
+        for (auto& t : local) {
             if (!t.paused)
                 t.fn();
         }
@@ -38,12 +46,14 @@ public:
 
     /// Pause a task by index
     void pause(std::size_t index) {
+        std::lock_guard<std::mutex> lock(tasks_mutex);
         if (index < tasks.size())
             tasks[index].paused = true;
     }
 
     /// Resume a task by index
     void resume(std::size_t index) {
+        std::lock_guard<std::mutex> lock(tasks_mutex);
         if (index < tasks.size())
             tasks[index].paused = false;
     }
