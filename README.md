@@ -31,6 +31,10 @@ new language constructs and tooling to support quantum-aware C++ development.
   source code.
 - **`#explain` directive** &mdash; Request runtime explanations for upcoming
   instructions.
+- **QIR-annotated LLVM IR** &mdash; Compiler output includes Quantum IR with
+  probability metadata for hardware backends.
+- **`features.yaml` roadmap** &mdash; A YAML file enumerates remaining tasks
+  required for a production-ready implementation.
 
 These features are experimental and not part of upstream GCC.
 
