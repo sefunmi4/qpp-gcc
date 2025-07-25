@@ -65,6 +65,15 @@ g++ -Iinclude examples/pbool_demo.cpp -o pbool_demo
 ./pbool_demo
 ```
 
+### Parsing Example
+
+The repository includes a small prototype parser that emits a JSON
+representation of Q++ constructs. Run it on the provided sample file:
+
+```sh
+python3 contrib/qpp_parse_ir.py examples/qpp_parse_example.qpp
+```
+
 Refer to the upstream GCC README for additional information about the
 compiler and licensing.
 

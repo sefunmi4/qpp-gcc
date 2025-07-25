@@ -1,0 +1,19 @@
+qstruct Token { qbit state; int index; };
+
+qregister qr1;
+cregister cr1;
+
+bool flag = qr1[0];
+
+int result = qr1[0] ^ qr1[1];
+int combo = qr1[0] & qr1[1];
+
+__qasm {
+  H 0;
+  CX 0,1;
+}
+
+task<QPU> kernel() {
+  // placeholder
+}
+
