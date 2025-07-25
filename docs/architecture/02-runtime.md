@@ -35,3 +35,16 @@ selected backend.
 `HardwareStub` is a minimal backend that simply collects emitted QIR
 strings. It serves as a placeholder until real devices are connected.
 
+## Probability Metadata
+
+Measurements and conditional branches that depend on quantum state are
+tagged with probability information.  This metadata is preserved through
+the LLVM pass pipeline and attached to the generated QIR so that
+hardware backends can reason about likely outcomes.
+
+## Inline Explanations
+
+When a `#explain` directive is encountered the runtime emits a textual
+annotation describing upcoming operations. These explanations may be
+consumed by tooling or displayed to the user during simulation.
+
