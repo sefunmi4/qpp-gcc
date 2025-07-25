@@ -32,3 +32,8 @@ runtime:
     branch_map: Show probability branching structure.
   developer_experience:
     explain_directive: Emit runtime explanations via #explain.
+  instruction_set:
+    pauli_y: Implement single-qubit Y gate.
+    pauli_z: Implement single-qubit Z gate.
+    controlled_x: Controlled-X (CNOT) gate via bitwise ^.
+    toffoli: Controlled-controlled-X gate via bitwise &.

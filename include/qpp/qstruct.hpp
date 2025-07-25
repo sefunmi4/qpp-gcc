@@ -70,6 +70,56 @@ public:
         }
     }
 
+    /// Apply Pauli-Y gate to a qubit
+    void apply_y(std::size_t qubit) {
+        const std::size_t stride = std::size_t{1} << qubit;
+        const std::size_t period = stride << 1;
+        const std::complex<double> I(0.0, 1.0);
+        for (std::size_t i = 0; i < state.amplitude.size(); i += period) {
+            for (std::size_t j = 0; j < stride; ++j) {
+                auto a0 = state.amplitude[i + j];
+                auto a1 = state.amplitude[i + j + stride];
+                state.amplitude[i + j] = -I * a1;
+                state.amplitude[i + j + stride] = I * a0;
+            }
+        }
+    }
+
+    /// Apply Pauli-Z gate to a qubit
+    void apply_z(std::size_t qubit) {
+        const std::size_t stride = std::size_t{1} << qubit;
+        const std::size_t period = stride << 1;
+        for (std::size_t i = 0; i < state.amplitude.size(); i += period) {
+            for (std::size_t j = 0; j < stride; ++j) {
+                state.amplitude[i + j + stride] *= -1.0;
+            }
+        }
+    }
+
+    /// Apply controlled-X gate
+    void apply_cx(std::size_t control, std::size_t target) {
+        if (control == target)
+            return;
+        for (std::size_t i = 0; i < state.amplitude.size(); ++i) {
+            if (((i >> control) & 1) && !((i >> target) & 1)) {
+                std::size_t j = i | (std::size_t{1} << target);
+                std::swap(state.amplitude[i], state.amplitude[j]);
+            }
+        }
+    }
+
+    /// Apply Toffoli (CCX) gate
+    void apply_ccx(std::size_t control1, std::size_t control2, std::size_t target) {
+        if (control1 == target || control2 == target)
+            return;
+        for (std::size_t i = 0; i < state.amplitude.size(); ++i) {
+            if (((i >> control1) & 1) && ((i >> control2) & 1) && !((i >> target) & 1)) {
+                std::size_t j = i | (std::size_t{1} << target);
+                std::swap(state.amplitude[i], state.amplitude[j]);
+            }
+        }
+    }
+
 private:
     qstruct state;
 };

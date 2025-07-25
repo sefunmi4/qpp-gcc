@@ -48,3 +48,7 @@ int x = a & b;  // may emit Toffoli when operands are quantum
 ```
 
 Bitwise operators expand to the corresponding quantum gates when required.
+The current implementation maps `^` to a controlled-X gate (CNOT) and
+`&` to a Toffoli gate when the operands reference quantum memory.  Single
+qubit operators such as `|`, `~`, and explicit method calls provide access
+to additional gates including `Y` and `Z`.
