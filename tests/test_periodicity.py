@@ -20,7 +20,7 @@ class PeriodicityTests(unittest.TestCase):
         code = r"""
 #include <iostream>
 #include <complex>
-#include \"qpp/qstruct.hpp\"
+#include "qpp/qstruct.hpp"
 int main() {
     qpp::qclass qc(1);
     qc.apply_h(0);
@@ -41,7 +41,7 @@ int main() {
         code = r"""
 #include <iostream>
 #include <complex>
-#include \"qpp/qstruct.hpp\"
+#include "qpp/qstruct.hpp"
 int main() {
     qpp::qclass qc(1);
     auto before = qc.data().amplitude;
@@ -62,7 +62,7 @@ int main() {
 #include <iostream>
 #include <complex>
 #include <vector>
-#include \"qpp/qstruct.hpp\"
+#include "qpp/qstruct.hpp"
 int main() {
     qpp::qclass qc(2);
     qc.apply_h(0);
