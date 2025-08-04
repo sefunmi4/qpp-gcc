@@ -11,8 +11,8 @@ translate this intermediate form to device specific commands. For now
 The compiler attaches probability metadata to the emitted QIR so that
 hardware schedulers can make informed decisions.  Hardware profiles
 describe qubit counts, supported gates and rate limits using YAML.  A
-priority-aware scheduler may pause and resume tasks based on these
-profiles.
+priority-aware scheduler may pause, resume, reprioritize or remove
+tasks based on these profiles.
 
 The API is intentionally minimal:
 

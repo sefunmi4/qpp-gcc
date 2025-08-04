@@ -20,7 +20,8 @@ new language constructs and tooling to support quantum-aware C++ development.
 - **Hardware API stubs** &mdash; Placeholder interfaces intended for
   integration with future quantum devices.
 - **Priority-aware scheduler** &mdash; The `qpp::Scheduler` manages
-  `task<*>` functions and supports pause/resume semantics.
+  `task<*>` functions, supports pause/resume semantics and allows
+  removing or reprioritizing tasks.
 - **`cstruct` and `cclass`** &mdash; Classical-only variants used for
   hybrid modeling alongside quantum structures.
 - **`qregister` and `cregister`** &mdash; Explicit register allocation or
