@@ -19,6 +19,10 @@ new language constructs and tooling to support quantum-aware C++ development.
   quantum logic gates such as `H`, `X`, `Y`, `Z`, `CNOT` and `CCX`.
 - **Hardware API stubs** &mdash; Placeholder interfaces intended for
   integration with future quantum devices.
+- **Hardware detection fallback** &mdash; `qpp::hardware_available()`
+  checks for a usable quantum backend and probabilistic types such as
+  `qpp::pbool` transparently fall back to a classical random number
+  generator with basic glitch detection when none is present.
 - **Priority-aware scheduler** &mdash; The `qpp::Scheduler` manages
   `task<*>` functions, supports pause/resume semantics and allows
   removing or reprioritizing tasks.
