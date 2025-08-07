@@ -6,13 +6,17 @@ import unittest
 root_dir = Path(__file__).resolve().parents[1]
 include_dir = root_dir / 'include'
 
+
 class PeriodicityTests(unittest.TestCase):
-    def compile_and_run(self, code, name):
+    def compile_and_run(self, code: str, name: str) -> str:
         with tempfile.TemporaryDirectory() as tmp:
             src = Path(tmp) / f"{name}.cpp"
             src.write_text(code)
             exe = Path(tmp) / name
-            subprocess.run(['g++', '-std=c++17', '-I', str(include_dir), str(src), '-o', str(exe)], check=True)
+            subprocess.run(
+                ['g++', '-std=c++17', '-I', str(include_dir), str(src), '-o', str(exe)],
+                check=True,
+            )
             result = subprocess.run([str(exe)], capture_output=True, text=True, check=True)
             return result.stdout.strip()
 
@@ -20,7 +24,7 @@ class PeriodicityTests(unittest.TestCase):
         code = r"""
 #include <iostream>
 #include <complex>
-#include \"qpp/qstruct.hpp\"
+#include "qpp/qstruct.hpp"
 int main() {
     qpp::qclass qc(1);
     qc.apply_h(0);
@@ -41,7 +45,7 @@ int main() {
         code = r"""
 #include <iostream>
 #include <complex>
-#include \"qpp/qstruct.hpp\"
+#include "qpp/qstruct.hpp"
 int main() {
     qpp::qclass qc(1);
     auto before = qc.data().amplitude;
@@ -62,7 +66,7 @@ int main() {
 #include <iostream>
 #include <complex>
 #include <vector>
-#include \"qpp/qstruct.hpp\"
+#include "qpp/qstruct.hpp"
 int main() {
     qpp::qclass qc(2);
     qc.apply_h(0);
@@ -81,5 +85,7 @@ int main() {
         out = self.compile_and_run(code, 'cxperiod')
         self.assertEqual(out, 'equal')
 
+
 if __name__ == '__main__':
     unittest.main()
+
