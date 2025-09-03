@@ -1,0 +1,14 @@
+#include "hardware_api.hpp"
+
+int main() {
+  // Target Qiskit; replace with "cirq" to use Cirq
+  HardwareAPI api("qiskit");
+  api.select_backend("statevector_simulator");
+
+  Circuit circuit; // inherits from std::vector
+  circuit.push_back(H(0));
+  circuit.push_back(CX(0,1));
+  circuit.push_back(Measure(0,1));
+
+  return 0;
+}
