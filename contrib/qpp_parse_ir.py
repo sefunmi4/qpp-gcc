@@ -53,6 +53,13 @@ def parse_file(text: str) -> dict:
                     qasm_buffer.append(after.strip())
             continue
 
+        m = re.search(r'circuit\.(?:append|push_back)\((\w+)\((.*?)\)\);', stripped)
+        if m:
+            gate, arg_str = m.groups()
+            args = [int(a.strip()) for a in arg_str.split(',') if a.strip()]
+            result["operations"].append({"gate": gate, "args": args})
+            continue
+
         m = re.search(r'\b(qstruct|qclass|cstruct|cclass)\s+(\w+)', stripped)
         if m:
             kind, name = m.groups()
