@@ -120,12 +120,12 @@ file /usr/local/gcc-x86_64/bin/gcc
 /usr/local/gcc-x86_64/bin/gcc -v
 /usr/local/gcc-x86_64/bin/g++ -v
 
-cat > hello.cpp <<'CPP'
+cat > helloworld.qpp <<'QPP'
 #include <iostream>
-int main(){ std::cout << "hello from g++!\n"; }
-CPP
-/usr/local/gcc-x86_64/bin/g++ -std=c++17 hello.cpp -o hello
-./hello
+int main(){ std::cout << "hello from q++!\n"; }
+QPP
+/usr/local/gcc-x86_64/bin/g++ -std=c++17 helloworld.qpp -o helloworld
+./helloworld
 ```
 
 Prebuilt macOS binaries are periodically published on the project's
