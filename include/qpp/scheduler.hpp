@@ -2,6 +2,7 @@
 #define QPP_SCHEDULER_HPP
 
 #include <functional>
+#include <algorithm>
 #include <queue>
 #include <vector>
 #include <cstddef>
