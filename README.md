@@ -124,7 +124,7 @@ cat > helloworld.qpp <<'QPP'
 #include <iostream>
 int main(){ std::cout << "hello from q++!\n"; }
 QPP
-/usr/local/gcc-x86_64/bin/g++ -std=c++17 helloworld.qpp -o helloworld
+/usr/local/gcc-x86_64/bin/g++ -std=c++17 -x c++ helloworld.qpp -o helloworld
 ./helloworld
 ```
 
