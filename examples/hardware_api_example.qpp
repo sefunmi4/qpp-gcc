@@ -1,14 +1,16 @@
-#include "hardware_api.hpp"
+#include <iostream>
+#include "qpp/hardware_stub.hpp"
 
 int main() {
-  // Target Qiskit; replace with "cirq" to use Cirq
-  HardwareAPI api("qiskit");
-  api.select_backend("statevector_simulator");
+  qpp::HardwareStub hw;
 
-  Circuit circuit; // inherits from std::vector
-  circuit.push_back(H(0));
-  circuit.push_back(CX(0,1));
-  circuit.push_back(Measure(0,1));
+  // Emit a few QIR instructions
+  hw.emit("H 0");
+  hw.emit("CX 0,1");
+  hw.emit("MEASURE 0,1");
+
+  // Display the collected program
+  std::cout << hw.result();
 
   return 0;
 }
