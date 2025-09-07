@@ -2,15 +2,16 @@
 
 This module exposes a minimal interface for obtaining either
 Qiskit or Cirq backends.  Credentials can be supplied via
-:func:`add_credientials` (note the intentional spelling to match
-external requirements). If credentials are not provided the
+:func:`add_credentials`. The previous :func:`add_credientials`
+spelling is preserved as an alias for backward compatibility.
+If credentials are not provided the
 connectors fall back to the frameworks' default simulators.
 
 Example
 -------
 
 >>> api = HardwareAPI('qiskit')
->>> api.add_credientials('qiskit', token='MYTOKEN')
+>>> api.add_credentials('qiskit', token='MYTOKEN')
 >>> backend = api.connect()
 
 """
@@ -46,7 +47,7 @@ class HardwareAPI:
     credentials: Dict[str, Dict[str, Any]] = field(default_factory=dict)
     backend: str | None = None
 
-    def add_credientials(self, provider: str, **kwargs: Any) -> None:
+    def add_credentials(self, provider: str, **kwargs: Any) -> None:
         """Store API credentials for a provider.
 
         Parameters
@@ -60,6 +61,9 @@ class HardwareAPI:
         """
 
         self.credentials[provider.lower()] = kwargs
+
+    # Backward compatibility for prior misspelling
+    add_credientials = add_credentials
 
     def select_backend(self, name: str) -> None:
         """Select the backend or QPU to run programs on."""

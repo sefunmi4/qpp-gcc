@@ -49,12 +49,13 @@ specified.
 Basic support for running programs on external hardware APIs is provided
 through the :class:`HardwareAPI` helper in ``hardware_api.py``.  It can
 connect to either Qiskit or Cirq backends.  Credentials may be supplied
-using ``add_credientials``:
+using ``add_credentials`` (the earlier ``add_credientials`` spelling is
+still accepted for backward compatibility):
 
 ```
 from hardware_api import HardwareAPI
 api = HardwareAPI('qiskit')
-api.add_credientials('qiskit', token='MYTOKEN')
+api.add_credentials('qiskit', token='MYTOKEN')
 backend = api.connect()
 ```
 
