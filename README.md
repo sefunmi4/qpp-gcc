@@ -43,36 +43,36 @@ new language constructs and tooling to support quantum-aware C++ development.
 
 These features are experimental and not part of upstream GCC.
 
-## Building with CMake
+## Building from source
 
-The workflow mirrors the process referenced in
-[CONTRIBUTING](.github/CONTRIBUTING.md) but uses CMake for configuration.
-A typical build looks like the following:
+The Q++ fork retains GCC's traditional `configure`/`make` build
+system. The process below mirrors the steps outlined in
+[CONTRIBUTING](.github/CONTRIBUTING.md).
 
 ```sh
 # Create a separate build directory
 mkdir build && cd build
 
-# Configure
-cmake ..
+# Configure the build (adjust --enable-languages as needed)
+../configure --disable-multilib --enable-languages=c,c++
 
 # Compile
-cmake --build .
+make -j"$(nproc)"
 
 # Run the test suite
-ctest
+make -k check
 
 # Optionally install
-cmake --install .
+make install
 ```
 
 ### Example
 
 After building, you can compile the demonstration program in
-`examples/pbool_demo.cpp`:
+`examples/pbool_demo.cpp` using the freshly built compiler:
 
 ```sh
-g++ -Iinclude examples/pbool_demo.cpp -o pbool_demo
+./build/gcc/g++ -Iinclude examples/pbool_demo.cpp -o pbool_demo
 ./pbool_demo
 ```
 
