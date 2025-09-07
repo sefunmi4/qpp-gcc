@@ -66,6 +66,71 @@ make -k check
 make install
 ```
 
+### macOS build
+
+The following commands build the toolchain for an x86_64 target using the
+macOS SDK and clang as the host compiler. These steps avoid the missing
+`/usr/include` and `/lib/cpp` issues on modern macOS and keep the build in
+stage1.
+
+```sh
+# Rosetta shell: obtain the SDK path
+SDKROOT="$(arch -x86_64 xcrun --sdk macosx --show-sdk-path)"
+echo "$SDKROOT"
+
+# Start from a clean build directory
+rm -rf build-gcc
+mkdir build-gcc && cd build-gcc
+
+# Configure the environment to use the SDK and clang's preprocessor
+export CC="clang -arch x86_64"
+export CXX="clang++ -arch x86_64"
+export CPP="/usr/bin/clang -E -arch x86_64"
+
+export CPPFLAGS="-I/usr/local/include -I/usr/local/opt/zlib/include -isysroot $SDKROOT"
+export CFLAGS="-isysroot $SDKROOT -mmacosx-version-min=11.0"
+export CXXFLAGS="$CFLAGS"
+export LDFLAGS="-L/usr/local/lib -L/usr/local/opt/zlib/lib -Wl,-syslibroot,$SDKROOT -mmacosx-version-min=11.0"
+
+# Configure with the SDK and a reduced feature set
+../configure \
+  --build=x86_64-apple-darwin23 \
+  --host=x86_64-apple-darwin23 \
+  --target=x86_64-apple-darwin23 \
+  --prefix=/usr/local/gcc-x86_64 \
+  --with-sysroot="$SDKROOT" \
+  --with-gmp=/usr/local/opt/gmp \
+  --with-mpfr=/usr/local/opt/mpfr \
+  --with-mpc=/usr/local/opt/libmpc \
+  --with-isl=/usr/local/opt/isl \
+  --with-system-zlib \
+  --enable-languages=c,c++ \
+  --disable-multilib \
+  --disable-nls \
+  --disable-libgomp \
+  --disable-bootstrap
+
+# Build and install
+make -j"$(sysctl -n hw.ncpu)"
+sudo make install
+
+# Verify the installation
+export PATH="/usr/local/gcc-x86_64/bin:$PATH"
+file /usr/local/gcc-x86_64/bin/gcc
+/usr/local/gcc-x86_64/bin/gcc -v
+/usr/local/gcc-x86_64/bin/g++ -v
+
+cat > hello.cpp <<'CPP'
+#include <iostream>
+int main(){ std::cout << "hello from g++!\n"; }
+CPP
+/usr/local/gcc-x86_64/bin/g++ -std=c++17 hello.cpp -o hello
+./hello
+```
+
+Prebuilt macOS binaries are periodically published on the project's
+releases page. Check there if you prefer not to build from source.
+
 ### Example
 
 After building, you can compile the demonstration program in
