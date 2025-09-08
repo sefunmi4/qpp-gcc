@@ -6,19 +6,27 @@
 
 namespace qpp::sim {
 
+#ifdef QPP_SINGLE_PRECISION
+using real_t = float;
+#else
+using real_t = double;
+#endif
+using complex_t = std::complex<real_t>;
+
 /// Thin wrapper around FFT libraries. Falls back to a no-op implementation
-/// when neither FFTW nor kissfft is available.
+/// when no supported FFT backend is available.
 class FFT {
 public:
-    std::vector<std::complex<double>>
-    forward(const std::vector<std::complex<double>>& in) const {
-#ifdef QPP_FFTW_AVAILABLE
+    std::vector<complex_t>
+    forward(const std::vector<complex_t>& in) const {
+#if defined(QPP_USE_FFTW)
         // Implementation using FFTW would go here
-        // Placeholder returning input
         return in;
-#elif defined(QPP_KISSFFT_AVAILABLE)
-        // Implementation using kissfft would go here
-        // Placeholder returning input
+#elif defined(QPP_USE_ONEMKL)
+        // Implementation using oneMKL would go here
+        return in;
+#elif defined(QPP_USE_CUFFT)
+        // Implementation using cuFFT would go here
         return in;
 #else
         // No FFT library available
@@ -27,18 +35,21 @@ public:
     }
 
     /// Compute real-to-complex FFT of a real input sequence.
-    std::vector<std::complex<double>> rfft(const std::vector<double>& in) const {
-        std::vector<std::complex<double>> complex_in(in.begin(), in.end());
+    std::vector<complex_t> rfft(const std::vector<real_t>& in) const {
+        std::vector<complex_t> complex_in(in.begin(), in.end());
         return forward(complex_in);
     }
 
-    std::vector<std::complex<double>>
-    inverse(const std::vector<std::complex<double>>& in) const {
-#ifdef QPP_FFTW_AVAILABLE
+    std::vector<complex_t>
+    inverse(const std::vector<complex_t>& in) const {
+#if defined(QPP_USE_FFTW)
         // Implementation using FFTW would go here
         return in;
-#elif defined(QPP_KISSFFT_AVAILABLE)
-        // Implementation using kissfft would go here
+#elif defined(QPP_USE_ONEMKL)
+        // Implementation using oneMKL would go here
+        return in;
+#elif defined(QPP_USE_CUFFT)
+        // Implementation using cuFFT would go here
         return in;
 #else
         return in;
