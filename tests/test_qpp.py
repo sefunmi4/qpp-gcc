@@ -25,6 +25,20 @@ class QppTests(unittest.TestCase):
         self.assertIn('P(a=true)=0.6', out)
         self.assertIn('P(a&&b=true)=0.42', out)
 
+    def test_bell_state_example(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            exe = Path(tmp) / 'bell'
+            subprocess.run(
+                ['g++', '-I', str(include_dir),
+                 str(root_dir / 'examples/bell_state.cpp'),
+                 str(root_dir / 'qpp/backend/LocalSimBackend.cpp'),
+                 '-o', str(exe)],
+                check=True
+            )
+            result = subprocess.run([str(exe)], capture_output=True, text=True)
+            self.assertIn('00: 0.5', result.stdout)
+            self.assertIn('11: 0.5', result.stdout)
+
     def test_scheduler_demo(self):
         out = self.compile_and_run(str(root_dir / 'examples/scheduler_demo.cpp'), 'sch')
         self.assertIn('H 0', out)

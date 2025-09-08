@@ -141,6 +141,25 @@ After building, you can compile the demonstration program in
 ./pbool_demo
 ```
 
+To explore the circuit API, the `examples/bell_state.cpp` program
+creates a Bell state using `Circuit` and `Program` with the
+`LocalSimBackend` and prints the resulting measurement
+probabilities:
+
+```sh
+./build/gcc/g++ -Iinclude examples/bell_state.cpp \
+    qpp/backend/LocalSimBackend.cpp -o bell_state
+./bell_state
+```
+
+Alternatively, the examples can be built using CMake:
+
+```sh
+cmake -S examples -B build/examples
+cmake --build build/examples --target bell_state
+./build/examples/bell_state
+```
+
 ### Parsing Example
 
 The repository includes a small prototype parser that emits a JSON
