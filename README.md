@@ -137,7 +137,7 @@ After building, you can compile the demonstration program in
 `examples/pbool_demo.cpp` using the freshly built compiler:
 
 ```sh
-./build/gcc/g++ -Iinclude examples/pbool_demo.cpp -o pbool_demo
+/usr/local/gcc-x86_64/bin/g++ -std=c++17 -Iinclude examples/pbool_demo.cpp -o pbool_demo
 ./pbool_demo
 ```
 
@@ -147,7 +147,7 @@ creates a Bell state using `Circuit` and `Program` with the
 probabilities:
 
 ```sh
-./build/gcc/g++ -Iinclude examples/bell_state.cpp \
+/usr/local/gcc-x86_64/bin/g++ -std=c++17 -Iinclude examples/bell_state.cpp \
     qpp/backend/LocalSimBackend.cpp -o bell_state
 ./bell_state
 ```
@@ -158,7 +158,7 @@ available and falls back to `LocalSimBackend` otherwise. It reports timing
 and throughput for both backends:
 
 ```sh
-./build/gcc/g++ -Iinclude examples/hardware_demo.cpp \
+/usr/local/gcc-x86_64/bin/g++ -std=c++17 -Iinclude examples/hardware_demo.cpp \
     qpp/backend/LocalSimBackend.cpp qpp/backend/QPUBackend.cpp -o hardware_demo
 # Optional: simulate a hardware device
 QPU_PCI_DEVICE=dummy ./hardware_demo
