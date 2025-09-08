@@ -4,11 +4,17 @@
 #include <cctype>
 #include <numeric>
 #include <sstream>
+#include <complex>
+#include <cmath>
 
 namespace qpp {
 
-LocalSimBackend::LocalSimBackend(int max_qubits, bool use_fftw, unsigned seed)
-    : maxQubits_(max_qubits), useFFTW_(use_fftw), rng_(seed) {}
+LocalSimBackend::LocalSimBackend(int max_qubits, bool use_fftw, unsigned seed,
+                                 double phase_jitter, double amplitude_noise,
+                                 double depolarizing)
+    : maxQubits_(max_qubits), useFFTW_(use_fftw), rng_(seed),
+      phaseJitter_(phase_jitter), amplitudeNoise_(amplitude_noise),
+      depolarizingProb_(depolarizing) {}
 
 void LocalSimBackend::loadCircuit(const std::string& circuit) {
     ops_.clear();
@@ -77,6 +83,45 @@ void LocalSimBackend::loadCircuit(const std::string& circuit) {
             psi_.apply_cx(op.args[0], op.args[1]);
         else if (op.gate == "ccx" && op.args.size() >= 3)
             psi_.apply_ccx(op.args[0], op.args[1], op.args[2]);
+
+        if (phaseJitter_ != 0.0 || amplitudeNoise_ != 0.0 ||
+            depolarizingProb_ != 0.0)
+            applyNoise();
+    }
+}
+
+void LocalSimBackend::applyNoise() {
+    auto& amp = psi_.data().amplitude;
+
+    if (phaseJitter_ != 0.0) {
+        std::normal_distribution<double> dist(0.0, phaseJitter_);
+        double phi = dist(rng_);
+        std::complex<double> phase = std::polar(1.0, phi);
+        for (auto& a : amp)
+            a *= phase;
+    }
+
+    if (amplitudeNoise_ != 0.0) {
+        std::normal_distribution<double> dist(0.0, amplitudeNoise_);
+        for (auto& a : amp)
+            a += std::complex<double>(dist(rng_), dist(rng_));
+    }
+
+    if (depolarizingProb_ != 0.0) {
+        std::uniform_real_distribution<double> dist(0.0, 1.0);
+        if (dist(rng_) < depolarizingProb_) {
+            std::normal_distribution<double> nd(0.0, 1.0);
+            double norm = 0.0;
+            for (auto& a : amp) {
+                double re = nd(rng_);
+                double im = nd(rng_);
+                a = {re, im};
+                norm += re * re + im * im;
+            }
+            norm = std::sqrt(norm);
+            for (auto& a : amp)
+                a /= norm;
+        }
     }
 }
 

@@ -2,6 +2,7 @@
 #define QPP_SIM_ENCODINGS_HPP
 
 #include <cmath>
+#include <functional>
 
 namespace qpp::sim {
 
@@ -17,11 +18,16 @@ struct LFC {
     double freq(double value) const { return scale * value; }
 
     /// Encode value at time t as either sine or square wave sample
-    double encode(double value, double t) const {
+    /// \param square When true, force square wave regardless of member setting
+    /// \param filter Optional hook to suppress higher harmonics
+    double encode(double value, double t, bool square = false,
+                  const std::function<double(double)>& filter = nullptr) const {
         constexpr double PI2 = 2.0 * 3.14159265358979323846;
         double phase = PI2 * freq(value) * t;
         double s = std::sin(phase);
-        return squareWave ? (s >= 0.0 ? 1.0 : -1.0) : s;
+        bool useSquare = square || squareWave;
+        double out = useSquare ? (s >= 0.0 ? 1.0 : -1.0) : s;
+        return filter ? filter(out) : out;
     }
 
     /// Recover value from frequency
@@ -42,11 +48,16 @@ struct LogFC {
     }
 
     /// Encode value at time t as either sine or square wave sample
-    double encode(double value, double t) const {
+    /// \param square When true, force square wave regardless of member setting
+    /// \param filter Optional hook to suppress higher harmonics
+    double encode(double value, double t, bool square = false,
+                  const std::function<double(double)>& filter = nullptr) const {
         constexpr double PI2 = 2.0 * 3.14159265358979323846;
         double phase = PI2 * freq(value) * t;
         double s = std::sin(phase);
-        return squareWave ? (s >= 0.0 ? 1.0 : -1.0) : s;
+        bool useSquare = square || squareWave;
+        double out = useSquare ? (s >= 0.0 ? 1.0 : -1.0) : s;
+        return filter ? filter(out) : out;
     }
 
     /// Recover value from frequency
