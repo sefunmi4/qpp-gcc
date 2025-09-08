@@ -1,6 +1,7 @@
 #ifndef QPP_BACKEND_BACKEND_HPP
 #define QPP_BACKEND_BACKEND_HPP
 
+#include <map>
 #include <string>
 
 namespace qpp {
@@ -8,6 +9,8 @@ namespace qpp {
 /// Result of executing a circuit on a backend.
 struct RunResult {
     bool success = true;
+    std::map<std::string, double> probabilities;
+    std::map<std::string, unsigned> counts;
 };
 
 /// Abstract base class for all qpp backends.
