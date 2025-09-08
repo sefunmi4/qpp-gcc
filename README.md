@@ -152,6 +152,20 @@ probabilities:
 ./bell_state
 ```
 
+To compare hardware and simulation backends, the
+`examples/hardware_demo.cpp` program selects a hardware device when one is
+available and falls back to `LocalSimBackend` otherwise. It reports timing
+and throughput for both backends:
+
+```sh
+./build/gcc/g++ -Iinclude examples/hardware_demo.cpp \
+    qpp/backend/LocalSimBackend.cpp qpp/backend/QPUBackend.cpp -o hardware_demo
+# Optional: simulate a hardware device
+QPU_PCI_DEVICE=dummy ./hardware_demo
+# Without a device it falls back to LocalSimBackend
+./hardware_demo
+```
+
 Alternatively, the examples can be built using CMake:
 
 ```sh
