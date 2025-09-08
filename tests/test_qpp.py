@@ -81,6 +81,30 @@ int main() {
             result = subprocess.run([str(exe)], check=True, capture_output=True, text=True)
             self.assertTrue(result.stdout.startswith('0.5'))
 
+    def test_program_execute_local(self):
+        code = r"""
+#include <iostream>
+#include "qpp/api/Program.hpp"
+int main() {
+    qpp::api::Circuit circ;
+    circ.allocateQubits(1);
+    circ.addGate("h", {0});
+    circ.addGate("measure", {0});
+    qpp::LocalSimBackend sim;
+    qpp::api::Program prog(circ, nullptr, &sim);
+    auto res = prog.execute();
+    std::cout << res.probabilities["0"] << ' ' << res.probabilities["1"] << '\n';
+    return 0;
+}
+"""
+        with tempfile.TemporaryDirectory() as tmp:
+            src = Path(tmp) / 'prog.cpp'
+            src.write_text(code)
+            exe = Path(tmp) / 'prog'
+            subprocess.run(['g++', '-I', str(include_dir), str(src), str(root_dir / 'qpp/backend/LocalSimBackend.cpp'), '-o', str(exe)], check=True)
+            result = subprocess.run([str(exe)], check=True, capture_output=True, text=True)
+            self.assertIn('0.5', result.stdout)
+
     def test_features_file(self):
         text = (root_dir / 'features.yaml').read_text()
         self.assertIn('circuit_simplification', text)
