@@ -19,8 +19,9 @@ inline std::vector<int> prime_sieve_frequency(int limit) {
     sieve[0] = sieve[1] = false;
     for (int p = 2; p * p <= limit; ++p) {
         if (sieve[p]) {
-            for (int i = p * p; i <= limit; i += p)
-                sieve[i] = false;
+            for (int i = p * p; i <= limit; ++i)
+                if (proj_mod_eq(i, 0, p))
+                    sieve[i] = false;
         }
     }
     std::vector<int> primes;
