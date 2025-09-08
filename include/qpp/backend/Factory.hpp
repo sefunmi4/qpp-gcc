@@ -10,7 +10,14 @@
 
 #include "Backend.hpp"
 #include "LocalSimBackend.hpp"
+
+#ifndef QPP_ENABLE_QPU
+#define QPP_ENABLE_QPU 0
+#endif
+
+#if QPP_ENABLE_QPU
 #include "QPUBackend.hpp"
+#endif
 
 namespace qpp {
 
@@ -47,12 +54,16 @@ public:
 
         if (choice == "sim" || choice == "simulator")
             return std::make_unique<LocalSimBackend>();
+#if QPP_ENABLE_QPU
         if (choice == "qpu" || choice == "hardware")
             return std::make_unique<QPUBackend>();
+#endif
 
+#if QPP_ENABLE_QPU
         auto qpu = std::make_unique<QPUBackend>();
         if (qpu->available())
             return qpu;
+#endif
         return std::make_unique<LocalSimBackend>();
     }
 };

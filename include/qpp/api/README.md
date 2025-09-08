@@ -2,9 +2,10 @@
 
 ## Backend selection
 
-`Program` instances obtain a backend via `BackendFactory`.  By default the
-factory prefers a hardware `QPUBackend` when available and falls back to the
-`LocalSimBackend` simulator.
+`Program` instances obtain a backend via `BackendFactory`.  When compiled with
+`QPP_ENABLE_QPU=1` the factory prefers a hardware `QPUBackend` when available
+and falls back to the `LocalSimBackend` simulator.  Without that macro defined
+only the simulator backend is constructed.
 
 The selection can be overridden:
 

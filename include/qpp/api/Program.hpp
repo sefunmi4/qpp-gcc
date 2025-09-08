@@ -22,6 +22,16 @@ public:
     Program(const Circuit& c, std::unique_ptr<Backend> backend)
         : circuit_(c), backend_(std::move(backend)) {}
 
+    // Legacy constructor accepting explicit backend pointers.
+    //\note The QPU pointer is ignored and retained for backwards
+    // compatibility with older examples that provided both a hardware and
+    // simulator backend. If a simulator pointer is supplied it is copied into
+    // an internally owned instance; otherwise the factory selection is used.
+    Program(const Circuit& c, Backend*, LocalSimBackend* sim)
+        : circuit_(c),
+          backend_(sim ? std::make_unique<LocalSimBackend>(*sim)
+                        : BackendFactory::create()) {}
+
     /// Execute the circuit on the selected backend.
     RunResult execute() {
         std::string text = circuit_.toString();
