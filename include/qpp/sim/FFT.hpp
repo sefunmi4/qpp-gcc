@@ -26,6 +26,12 @@ public:
 #endif
     }
 
+    /// Compute real-to-complex FFT of a real input sequence.
+    std::vector<std::complex<double>> rfft(const std::vector<double>& in) const {
+        std::vector<std::complex<double>> complex_in(in.begin(), in.end());
+        return forward(complex_in);
+    }
+
     std::vector<std::complex<double>>
     inverse(const std::vector<std::complex<double>>& in) const {
 #ifdef QPP_FFTW_AVAILABLE
