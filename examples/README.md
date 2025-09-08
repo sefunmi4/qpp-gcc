@@ -1,6 +1,8 @@
 # QPP Examples
 
-These samples demonstrate how to use the qpp APIs and backends.
+These samples demonstrate how to use the qpp APIs and backends. Source files now
+use the `.qpp` extension, though the build system still accepts `.cpp` sources
+for backward compatibility.
 
 ## Build
 
