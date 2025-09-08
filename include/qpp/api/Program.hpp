@@ -1,13 +1,14 @@
 #ifndef QPP_API_PROGRAM_HPP
 #define QPP_API_PROGRAM_HPP
 
+#include <memory>
 #include <random>
 #include <string>
 
 #include "qpp/api/Circuit.hpp"
 #include "qpp/api/Sampler.hpp"
 #include "qpp/backend/Backend.hpp"
-#include "qpp/backend/LocalSimBackend.hpp"
+#include "qpp/backend/Factory.hpp"
 
 namespace qpp {
 namespace api {
@@ -15,19 +16,19 @@ namespace api {
 /// Program ties a Circuit to execution backends.
 class Program {
 public:
-    Program(const Circuit& c, Backend* qpu, LocalSimBackend* sim)
-        : circuit_(c), qpuBackend_(qpu), simBackend_(sim) {}
+    explicit Program(const Circuit& c)
+        : circuit_(c), backend_(BackendFactory::create()) {}
 
-    /// Execute the circuit on the available backend.
+    Program(const Circuit& c, std::unique_ptr<Backend> backend)
+        : circuit_(c), backend_(std::move(backend)) {}
+
+    /// Execute the circuit on the selected backend.
     RunResult execute() {
         std::string text = circuit_.toString();
         RunResult result;
-        if (qpuBackend_ && qpuBackend_->available()) {
-            qpuBackend_->loadCircuit(text);
-            result = qpuBackend_->run();
-        } else if (simBackend_) {
-            simBackend_->loadCircuit(text);
-            result = simBackend_->run();
+        if (backend_ && backend_->available()) {
+            backend_->loadCircuit(text);
+            result = backend_->run();
         }
         if (circuit_.shots > 0 && result.counts.empty() && !result.probabilities.empty())
             result.counts = Sampler::sample(result.probabilities, circuit_.shots, rng_);
@@ -37,8 +38,7 @@ public:
     Circuit circuit_;
 
 private:
-    Backend* qpuBackend_ = nullptr;
-    LocalSimBackend* simBackend_ = nullptr;
+    std::unique_ptr<Backend> backend_;
     std::mt19937 rng_{std::random_device{}()};
 };
 
