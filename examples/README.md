@@ -35,6 +35,8 @@ The program reports timing and throughput for the selected backend and for
 
 Compile and run directly:
 
-```
-g++ -std=c++17 -I include -I . examples/master_demo.cpp && ./a.out
+```sh
+g++ -std=c++17 -I include -I . examples/master_demo.cpp \
+    qpp/backend/LocalSimBackend.cpp -o master_demo
+./master_demo
 ```
