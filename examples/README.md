@@ -30,3 +30,11 @@ QPU_PCI_DEVICE=dummy ./hardware_demo
 
 The program reports timing and throughput for the selected backend and for
 `LocalSimBackend` for comparison.
+
+## master_demo.cpp
+
+Compile and run directly:
+
+```
+g++ -std=c++17 -I include -I . examples/master_demo.cpp && ./a.out
+```
