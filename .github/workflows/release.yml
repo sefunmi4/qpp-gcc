@@ -1,0 +1,102 @@
+name: Build & Release Q++
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'   # e.g., v0.1.0
+
+permissions:
+  contents: write   # needed to create/upload GitHub Releases
+
+jobs:
+  build:
+    name: Build ${{ matrix.os }} (${{ matrix.arch }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            arch: x64
+            cmake_gen: "Unix Makefiles"
+          - os: macos-13   # Intel
+            arch: x64
+            cmake_gen: "Unix Makefiles"
+          - os: macos-14   # Apple Silicon
+            arch: arm64
+            cmake_gen: "Unix Makefiles"
+          - os: windows-latest
+            arch: x64
+            cmake_gen: "NMake Makefiles"  # or "Visual Studio 17 2022" if you prefer
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up CMake
+        uses: lukka/get-cmake@v3.30.0
+
+      - name: Set up MSVC (Windows only)
+        if: startsWith(matrix.os, 'windows')
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Configure
+        run: |
+          cmake -S . -B build -G "${{ matrix.cmake_gen }}" -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: |
+          cmake --build build --config Release --parallel
+
+      - name: Package with CPack
+        run: |
+          cmake --build build --config Release --target package
+        shell: bash
+
+      - name: Rename artifacts with platform suffix
+        shell: bash
+        run: |
+          mkdir -p out
+          VERSION="${GITHUB_REF_NAME#v}"  # e.g., 0.1.0
+          # Collect all cpack outputs
+          ls -la build
+          # Move and rename
+          for f in build/*.tar.gz build/*.zip build/*.deb; do
+            [ -e "$f" ] || continue
+            base=$(basename "$f")
+            ext="${base##*.}"
+            # produce like: qpp-0.1.0-ubuntu-x64.tar.gz, macos-x64.zip, windows-x64.zip
+            if [[ "${{ matrix.os }}" == "ubuntu-latest" ]]; then plat="ubuntu"; fi
+            if [[ "${{ matrix.os }}" == "macos-13" ]]; then plat="macos-x64"; fi
+            if [[ "${{ matrix.os }}" == "macos-14" ]]; then plat="macos-arm64"; fi
+            if [[ "${{ matrix.os }}" == "windows-latest" ]]; then plat="windows-x64"; fi
+            new="qpp-${VERSION}-${plat}.${ext}"
+            cp "$f" "out/$new"
+          done
+          ls -la out
+
+      - name: Upload artifacts (job)
+        uses: actions/upload-artifact@v4
+        with:
+          name: qpp-${{ github.ref_name }}-${{ matrix.os }}-${{ matrix.arch }}
+          path: out/*
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: collected
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: Q++ ${{ github.ref_name }}
+          draft: false
+          prerelease: false
+          files: |
+            collected/**/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
