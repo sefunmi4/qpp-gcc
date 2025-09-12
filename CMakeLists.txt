@@ -24,6 +24,9 @@ endif()
 
 project(qpp VERSION ${QPP_VERSION} LANGUAGES CXX)
 
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
 # your targets here
 add_executable(qpp src/main.cpp src/compiler.cpp)  # example
 
