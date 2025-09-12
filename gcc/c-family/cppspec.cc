@@ -38,7 +38,7 @@ along with GCC; see the file COPYING3.  If not see
 static const char *const known_suffixes[] =
 {
   ".c",  ".C",   ".S",   ".m",
-  ".cc", ".cxx", ".cpp", ".cp",  ".c++",
+  ".cc", ".cxx", ".cpp", ".qpp", ".cp",  ".c++",
   ".sx",
   NULL
 };
