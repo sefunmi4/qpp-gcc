@@ -21,10 +21,12 @@ set(CPACK_PACKAGE_VERSION "${PROJECT_VERSION}")
 set(CPACK_GENERATOR "TGZ;ZIP")
 
 # Linux .deb (starter)
-set(CPACK_DEBIAN_PACKAGE_MAINTAINER "Architecture of Homosapiens")
-set(CPACK_DEBIAN_PACKAGE_SECTION "devel")
-set(CPACK_DEBIAN_PACKAGE_ARCHITECTURE "amd64")
-list(APPEND CPACK_GENERATOR "DEB")
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+  set(CPACK_DEBIAN_PACKAGE_MAINTAINER "Architecture of Homosapiens")
+  set(CPACK_DEBIAN_PACKAGE_SECTION "devel")
+  set(CPACK_DEBIAN_PACKAGE_ARCHITECTURE "amd64")
+  list(APPEND CPACK_GENERATOR "DEB")
+endif()
 
 # Windows: leave ZIP for now; installer can come later
 # macOS: use ZIP/TGZ; Homebrew will build from tarball
