@@ -1,6 +1,8 @@
 #include <iostream>
 #include <string>
 
+#include "compiler.hpp"
+
 int main(int argc, char** argv) {
     // Print a helpful message describing how to use Q++ when invoked with
     // --help or -h.  If no arguments are given, we also show the message so
@@ -16,8 +18,6 @@ int main(int argc, char** argv) {
         return 0;
     }
 
-    // Placeholder for future compiler logic.
-    // TODO: add real compilation and simulation steps here.
-    return 0;
+    return compile_and_run(argv[1]);
 }
 
