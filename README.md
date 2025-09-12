@@ -131,6 +131,21 @@ QPP
 Prebuilt macOS binaries are periodically published on the project's
 releases page. Check there if you prefer not to build from source.
 
+After downloading a release, macOS may quarantine the binary. If you see a message like "Apple cannot verify 'qpp'", remove the quarantine attribute:
+
+```sh
+xattr -dr com.apple.quarantine /usr/local/bin/qpp
+```
+
+Adjust the path if you install the binary elsewhere. You can also ad-hoc sign the binary:
+
+```sh
+codesign --force --sign - /usr/local/bin/qpp
+```
+
+After either step, run `qpp --help` to verify the installation.
+
+
 ### Example
 
 After building, you can compile the demonstration program in
