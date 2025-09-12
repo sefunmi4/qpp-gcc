@@ -156,8 +156,19 @@ QPP
 
 ### Example
 
-After building, you can compile the demonstration program in
-`examples/pbool_demo.cpp` using the freshly built compiler:
+After building, you can run the demonstration program directly from its
+`.qpp` source using the `qpp` command-line tool:
+
+```sh
+# from the repository root after building with CMake
+./build/qpp examples/pbool_demo.qpp
+
+# or with an installed release
+qpp examples/pbool_demo.qpp
+```
+
+The `g++` commands below compile the corresponding C++ versions
+(`pbool_demo.cpp`, etc.) using the freshly built compiler for comparison:
 
 ```sh
 /usr/local/gcc-x86_64/bin/g++ -std=c++17 -Iinclude examples/pbool_demo.cpp -o pbool_demo
