@@ -1,5 +1,28 @@
 cmake_minimum_required(VERSION 3.20)
-project(qpp VERSION 0.1.0 LANGUAGES CXX)
+
+# Determine project version from environment or git tag, defaulting to 0.1.6
+if(DEFINED ENV{QPP_VERSION})
+  set(QPP_VERSION $ENV{QPP_VERSION})
+else()
+  execute_process(
+    COMMAND git describe --tags --abbrev=0
+    OUTPUT_VARIABLE QPP_VERSION_FROM_GIT
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+    ERROR_QUIET
+  )
+  if(QPP_VERSION_FROM_GIT)
+    string(REGEX REPLACE "^v" "" QPP_VERSION_FROM_GIT "${QPP_VERSION_FROM_GIT}")
+    if(QPP_VERSION_FROM_GIT MATCHES "^[0-9]+\\.[0-9]+(\\.[0-9]+)?")
+      set(QPP_VERSION ${QPP_VERSION_FROM_GIT})
+    else()
+      set(QPP_VERSION 0.1.6)
+    endif()
+  else()
+    set(QPP_VERSION 0.1.6)
+  endif()
+endif()
+
+project(qpp VERSION ${QPP_VERSION} LANGUAGES CXX)
 
 # your targets here
 add_executable(qpp src/main.cpp)  # example
