@@ -54,4 +54,17 @@ endif()
 # Windows: leave ZIP for now; installer can come later
 # macOS: use ZIP/TGZ; Homebrew will build from tarball
 
+# Override the default system name in package file/folder names.
+# By default CPack uses values like "Darwin" which end up creating
+# archives such as qpp-0.1.6-Darwin.tar.gz.  Downstream tooling expects
+# the macOS arm64 package to contain a top-level directory named
+# "qpp-<version>-macos-arm64" instead.
+if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+  if(CMAKE_SYSTEM_PROCESSOR STREQUAL "arm64")
+    set(CPACK_SYSTEM_NAME "macos-arm64")
+  else()
+    set(CPACK_SYSTEM_NAME "macos-x64")
+  endif()
+endif()
+
 include(CPack)
