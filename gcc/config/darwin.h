@@ -456,8 +456,8 @@ extern GTY(()) int darwin_ms_struct;
 #define DSYMUTIL_SPEC \
   "%{!c:%{!E:%{!S:%{!r:%{!M:%{!MM:%{!fsyntax-only:%{!fdump=*:\
      %{g*:%{!gctf:%{!gbtf:%{%:debug-level-gt(0): -idsym \
-       %{.c|.cc|.C|.cpp|.cp|.c++|.cxx|.CPP|.m|.mm|.s|.f|.f90|\
-	 .f95|.f03|.f77|.for|.F|.F90|.F95|.F03|.d: -dsym }\
+       %{.c|.cc|.C|.cpp|.qpp|.cp|.c++|.cxx|.CPP|.m|.mm|.s|.f|.f90|\
+         .f95|.f03|.f77|.for|.F|.F90|.F95|.F03|.d: -dsym }\
       }}}}\
    }}}}}}}}"
 

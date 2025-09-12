@@ -1404,9 +1404,10 @@ struct compiler
   int combinable;               /* If nonzero, compiler can deal with
 				    multiple source files at once (IMA).  */
   int needs_preprocessing;       /* If nonzero, source files need to
-				    be run through a preprocessor.  */
-};
-
+  {".cpp", "#C++", 0, 0, 0}, {".qpp", "#C++", 0, 0, 0},
+  {".cp", "#C++", 0, 0, 0}, {".c++", "#C++", 0, 0, 0},
+  {".C", "#C++", 0, 0, 0}, {".CPP", "#C++", 0, 0, 0},
+  {".ii", "#C++", 0, 0, 0},
 /* Pointer to a vector of `struct compiler' that gives the spec for
    compiling a file, based on its suffix.
    A file that does not end in any of these suffixes will be passed
