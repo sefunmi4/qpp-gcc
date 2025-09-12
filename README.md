@@ -156,8 +156,20 @@ QPP
 
 ### Example
 
-After building, you can compile the demonstration program in
-`examples/pbool_demo.cpp` using the freshly built compiler:
+After building, you can run the boolean expression demo directly from its
+`.qpp` source using the `qpp` command-line tool:
+
+```sh
+# from the repository root after building with CMake
+./build/qpp examples/pbool_demo.qpp
+
+# or with an installed release
+qpp examples/pbool_demo.qpp
+```
+
+Alternatively, the `g++` commands below compile and run the corresponding C++
+demo sources (`pbool_demo.cpp`, etc.) so you can compare the `.qpp` and C++
+versions:
 
 ```sh
 /usr/local/gcc-x86_64/bin/g++ -std=c++17 -Iinclude examples/pbool_demo.cpp -o pbool_demo
