@@ -25,7 +25,7 @@ endif()
 project(qpp VERSION ${QPP_VERSION} LANGUAGES CXX)
 
 # your targets here
-add_executable(qpp src/main.cpp)  # example
+add_executable(qpp src/main.cpp src/compiler.cpp)  # example
 
 # ---------- Install rules ----------
 # Binaries

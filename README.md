@@ -43,6 +43,32 @@ new language constructs and tooling to support quantum-aware C++ development.
 
 These features are experimental and not part of upstream GCC.
 
+## Installing a release
+
+Prebuilt binaries are published on the project's releases page. Download the
+archive matching your platform, extract it, and place the `qpp` executable on
+your `PATH`.
+
+### Linux
+
+```sh
+curl -L -o qpp.tar.gz https://github.com/<owner>/qpp-gcc/releases/download/<tag>/qpp-<tag>-linux-x86_64.tar.gz
+tar -xzf qpp.tar.gz
+sudo mv qpp-<tag>/bin/qpp /usr/local/bin/
+qpp --help
+```
+
+### macOS
+
+```sh
+curl -L -o qpp-macos.tar.gz https://github.com/<owner>/qpp-gcc/releases/download/<tag>/qpp-<tag>-macos-x86_64.tar.gz
+tar -xzf qpp-macos.tar.gz
+sudo mv qpp-<tag>/bin/qpp /usr/local/bin/
+xattr -dr com.apple.quarantine /usr/local/bin/qpp  # remove quarantine
+codesign --force --sign - /usr/local/bin/qpp       # optional ad-hoc signing
+qpp --help
+```
+
 ## Building from source
 
 The Q++ fork retains GCC's traditional `configure`/`make` build
@@ -127,24 +153,6 @@ QPP
 /usr/local/gcc-x86_64/bin/g++ -std=c++17 -x c++ helloworld.qpp -o helloworld
 ./helloworld
 ```
-
-Prebuilt macOS binaries are periodically published on the project's
-releases page. Check there if you prefer not to build from source.
-
-After downloading a release, macOS may quarantine the binary. If you see a message like "Apple cannot verify 'qpp'", remove the quarantine attribute:
-
-```sh
-xattr -dr com.apple.quarantine /usr/local/bin/qpp
-```
-
-Adjust the path if you install the binary elsewhere. You can also ad-hoc sign the binary:
-
-```sh
-codesign --force --sign - /usr/local/bin/qpp
-```
-
-After either step, run `qpp --help` to verify the installation.
-
 
 ### Example
 
