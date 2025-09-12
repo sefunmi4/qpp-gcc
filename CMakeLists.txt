@@ -11,7 +11,6 @@ install(TARGETS qpp RUNTIME DESTINATION bin)
 # install(DIRECTORY include/ DESTINATION include)
 
 # ---------- CPack package config ----------
-include(CPack)
 set(CPACK_PACKAGE_NAME "qpp")
 set(CPACK_PACKAGE_VENDOR "Architecture of Homosapiens")
 set(CPACK_PACKAGE_CONTACT "you@example.com")
@@ -29,3 +28,5 @@ list(APPEND CPACK_GENERATOR "DEB")
 
 # Windows: leave ZIP for now; installer can come later
 # macOS: use ZIP/TGZ; Homebrew will build from tarball
+
+include(CPack)
