@@ -166,7 +166,6 @@ After building, you can run the boolean expression demo directly from its
 # or with an installed release
 qpp examples/pbool_demo.qpp
 ```
-
 Alternatively, the `g++` commands below compile and run the corresponding C++
 demo sources (`pbool_demo.cpp`, etc.) so you can compare the `.qpp` and C++
 versions:
