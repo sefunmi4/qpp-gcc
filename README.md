@@ -73,6 +73,24 @@ sudo mv qpp-<tag>/bin/qpp /usr/local/bin/
 qpp --help
 ```
 
+### Debian/Ubuntu `.deb` packages
+
+You can also install from a `.deb` release. Ensure the package file is in
+your current directory before running:
+
+```sh
+sudo apt install ./qpp-0.1.0-ubuntu-x64.deb
+# or:
+sudo dpkg -i qpp-0.1.0-ubuntu-x64.deb
+sudo apt -f install   # fix deps if needed
+```
+
+If the `.deb` file is missing, `apt` reports `E: Unsupported file
+./qpp-0.1.0-ubuntu-x64.deb given on commandline`, `dpkg` reports
+`dpkg: error: cannot access archive 'qpp-0.1.0-ubuntu-x64.deb': No such
+file or directory`, and `sudo apt -f install` finds no dependencies to
+fix.
+
 ### macOS
 
 ```sh
