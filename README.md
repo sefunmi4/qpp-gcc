@@ -84,6 +84,36 @@ codesign --force --sign - /usr/local/bin/qpp       # optional ad-hoc signing
 qpp --help
 ```
 
+## Uninstalling
+
+The `qpp` binary can be removed by reversing the installation steps.
+
+### Homebrew
+
+```sh
+brew uninstall qpp
+brew untap sefunmi4/qpp  # optional
+```
+
+### Manual download
+
+Delete the `qpp` executable you placed on your `PATH`:
+
+```sh
+sudo rm /usr/local/bin/qpp
+```
+
+### Source build
+
+`make uninstall` is not supported. Remove the installation prefix
+you supplied to `configure`:
+
+```sh
+sudo rm -rf /usr/local/gcc-x86_64
+```
+
+Run `which qpp` to confirm the command is no longer available.
+
 ## Building from source
 
 The Q++ fork retains GCC's traditional `configure`/`make` build
