@@ -156,7 +156,7 @@ QPP
 
 ### Example
 
-After building, you can run the demonstration program directly from its
+After building, you can run the boolean expression demo directly from its
 `.qpp` source using the `qpp` command-line tool:
 
 ```sh
@@ -166,9 +166,9 @@ After building, you can run the demonstration program directly from its
 # or with an installed release
 qpp examples/pbool_demo.qpp
 ```
-
-The `g++` commands below compile the corresponding C++ versions
-(`pbool_demo.cpp`, etc.) using the freshly built compiler for comparison:
+Alternatively, the `g++` commands below compile and run the corresponding C++
+demo sources (`pbool_demo.cpp`, etc.) so you can compare the `.qpp` and C++
+versions:
 
 ```sh
 /usr/local/gcc-x86_64/bin/g++ -std=c++17 -Iinclude examples/pbool_demo.cpp -o pbool_demo
