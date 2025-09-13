@@ -49,6 +49,21 @@ Prebuilt binaries are published on the project's releases page. Download the
 archive matching your platform, extract it, and place the `qpp` executable on
 your `PATH`.
 
+### Homebrew tap (macOS & Linux)
+
+If you previously attempted to install and `brew list qpp` reported `No such keg`,
+refresh the tap and reinstall the formula:
+
+```sh
+brew untap sefunmi4/qpp 2>/dev/null
+brew tap sefunmi4/qpp
+brew install qpp
+# or
+brew reinstall sefunmi4/qpp/qpp
+```
+
+After a successful install, `brew list qpp` should display the installed files.
+
 ### Linux
 
 ```sh
