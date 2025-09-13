@@ -76,6 +76,9 @@ system. The process below mirrors the steps outlined in
 [CONTRIBUTING](.github/CONTRIBUTING.md).
 
 ```sh
+# Download prerequisite libraries (GMP, MPFR, MPC, etc.)
+./contrib/download_prerequisites
+
 # Create a separate build directory
 mkdir build && cd build
 
