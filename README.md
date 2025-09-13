@@ -76,6 +76,13 @@ system. The process below mirrors the steps outlined in
 [CONTRIBUTING](.github/CONTRIBUTING.md).
 
 ```sh
+# Download prerequisite libraries (GMP, MPFR, MPC, etc.)
+./contrib/download_prerequisites
+
+# Ensure required build tools are installed
+# gawk and bison >= 3.0 must be available in your PATH
+# (e.g., on macOS: brew install gawk bison)
+
 # Create a separate build directory
 mkdir build && cd build
 
@@ -94,10 +101,10 @@ make install
 
 ### macOS build
 
-The following commands build the toolchain for an x86_64 target using the
-macOS SDK and clang as the host compiler. These steps avoid the missing
-`/usr/include` and `/lib/cpp` issues on modern macOS and keep the build in
-stage1.
+If the generic steps above fail on macOS, the sequence below has been tested
+to work on recent systems. It targets an x86_64 toolchain using the macOS SDK
+under Rosetta and avoids the missing `/usr/include` and `/lib/cpp` issues on
+modern installations while keeping the build in stage1.
 
 ```sh
 # Rosetta shell: obtain the SDK path
