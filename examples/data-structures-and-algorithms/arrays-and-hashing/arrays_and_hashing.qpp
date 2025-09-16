@@ -1,79 +1,212 @@
-// 1. Contains Duplicates
-// Given an integer array nums, return true if any value appears more than once in the array, otherwise return false.
+#include <array>
+#include <cmath>
+#include <complex>
+#include <iomanip>
+#include <iostream>
+#include <string>
+#include <vector>
 
-// 2. Valid Anagram  
-// Given two strings s and t, return true if the two strings are anagrams of each other, otherwise return false.
-// An anagram is a string that contains the exact same characters as another string, but the order of the characters can be different.
+#include "arrays_and_hashing.hpp"
 
-// 3. Two Sum 
-// Given an array of integers nums and an integer target, return the indices i and j such that nums[i] + nums[j] == target and i != j.
-// You may assume that every input has exactly one pair of indices i and j that satisfy the condition.
-// Return the answer with the smaller index first.
+namespace {
+std::string basis_string(std::size_t index, std::size_t qubits) {
+    std::string bits(qubits, '0');
+    for (std::size_t q = 0; q < qubits; ++q)
+        bits[qubits - q - 1] = ((index >> q) & 1u) ? '1' : '0';
+    return bits;
+}
 
-// 4. Group Anagrams
-// Given an array of strings strs, group all the anagrams together into sublists. You may return the output in any order.
-// An anagram is a string that contains the same characters as another string, but the order of the characters can be different.
+void print_state(const qpp::qstruct& state, const std::string& label) {
+    const std::size_t qubits = state.qubits();
+    std::cout << label << " (" << qubits << " qubits) amplitudes:\n";
+    for (std::size_t i = 0; i < state.amplitude.size(); ++i) {
+        const double probability = std::norm(state.amplitude[i]);
+        if (probability < 1e-9)
+            continue;
+        std::cout << "  |" << basis_string(i, qubits) << "> -> "
+                  << state.amplitude[i] << " (p=" << probability << ")\n";
+    }
+}
 
-// 5. Top K frequent Elements 
-// Given an integer array nums and an integer k, return the k most frequent elements within the array.
-// The test cases are generated such that the answer is always unique.
-// You may return the output in any order.
+void demonstrate_entanglement(const qpp::qstruct& state,
+                              const std::string& label) {
+    print_state(state, label);
 
-// 6. Encode & Decode String
-// Design an algorithm to encode a list of strings into a single string. The encoded string is then decoded back to the original list of strings.
-// Please implement encode and decode
+    double prob_key_one = 0.0;
+    double prob_key_zero = 0.0;
+    double prob_value_one = 0.0;
+    double prob_value_zero = 0.0;
+    double key0_value1 = 0.0;
+    double key1_value1 = 0.0;
+    double value0_key1 = 0.0;
+    double value1_key1 = 0.0;
 
-// 7. Product of Array Except Self 
-// Given an integer array nums, return an array output where output[i] is the product of all the elements of nums except nums[i].
-// Each product is guaranteed to fit in a 32-bit integer.
-// Follow-up: Could you solve it in O(n) time without using the division operation?
+    for (std::size_t i = 0; i < state.amplitude.size(); ++i) {
+        const bool key_bit = (i & 1u) != 0u;
+        const bool value_bit = ((i >> 1) & 1u) != 0u;
+        const double probability = std::norm(state.amplitude[i]);
+        if (key_bit)
+            prob_key_one += probability;
+        else
+            prob_key_zero += probability;
+        if (value_bit)
+            prob_value_one += probability;
+        else
+            prob_value_zero += probability;
+        if (!key_bit && value_bit)
+            key0_value1 += probability;
+        if (key_bit && value_bit)
+            key1_value1 += probability;
+        if (!value_bit && key_bit)
+            value0_key1 += probability;
+        if (value_bit && key_bit)
+            value1_key1 += probability;
+    }
 
-// 8. Longest Consecutive Sequence
-// Given an array of integers nums, return the length of the longest consecutive sequence of elements that can be formed.
-// A consecutive sequence is a sequence of elements in which each element is exactly 1 greater than the previous element. The elements do not have to be consecutive in the original array.
-// You must write an algorithm that runs in O(n) time.
+    const qpp::pbool key_bias(prob_key_one);
+    const qpp::pbool value_bias(prob_value_one);
+    const double value_given_key0 =
+        prob_key_zero > 0.0 ? key0_value1 / prob_key_zero : 0.0;
+    const double value_given_key1 =
+        prob_key_one > 0.0 ? key1_value1 / prob_key_one : 0.0;
+    const double key_given_value0 =
+        prob_value_zero > 0.0 ? value0_key1 / prob_value_zero : 0.0;
+    const double key_given_value1 =
+        prob_value_one > 0.0 ? value1_key1 / prob_value_one : 0.0;
 
+    std::cout << "  P(key=1) = " << key_bias.probability()
+              << ", P(value=1) = " << value_bias.probability() << '\n';
+    std::cout << "  P(value=1 | key=0) = " << value_given_key0
+              << ", P(value=1 | key=1) = " << value_given_key1 << '\n';
+    std::cout << "  P(key=1 | value=0) = " << key_given_value0
+              << ", P(key=1 | value=1) = " << key_given_value1 << "\n\n";
+}
+} // namespace
 
+int main() {
+    using namespace qpp::examples::arrays_and_hashing;
 
+    std::cout << std::boolalpha;
 
-// building an arrays from bits and o qbits
+    // Classical demonstrations
+    const std::vector<int> duplicate_input{1, 2, 3, 1};
+    std::cout << "contains_duplicates([1,2,3,1]) -> "
+              << contains_duplicates(duplicate_input) << '\n';
 
-// 0=0 -=90 1=180 +=270
+    std::cout << "valid_anagram('listen','silent') -> "
+              << valid_anagram("listen", "silent") << '\n';
 
-// [b,b,b,b] = [1|0, 1|0, 1|0, 1|0, ...] = [+|-, +|-, +|-, +|-, ...] =discrete/digital/ 0 or 180 / 100% - (100% to 0%) = 0% to 100%
+    const std::pair<int, int> sum_indices = two_sum({2, 7, 11, 15}, 9);
+    std::cout << "two_sum([2,7,11,15], 9) -> (" << sum_indices.first << ", "
+              << sum_indices.second << ")\n";
 
-// [q,q,q,q] = [1/0, 1/0, 1/0, 1/0, ...] = [+/-, +/-, +/-, +/-, ...] = continous/analog/ 0 to 360 / (0% to 100%) - (100% to 0%) = -100%(left 1) to -50%(-) to 0%(0) to 50%(+) to 100%(right 1) 
+    const std::vector<std::string> words{"eat", "tea", "tan", "ate", "nat",
+                                          "bat"};
+    const auto grouped = group_anagrams(words);
+    std::cout << "group_anagrams(['eat','tea','tan','ate','nat','bat']) ->\n";
+    for (const auto& bucket : grouped) {
+        std::cout << "  [";
+        for (std::size_t i = 0; i < bucket.size(); ++i) {
+            if (i)
+                std::cout << ", ";
+            std::cout << bucket[i];
+        }
+        std::cout << "]\n";
+    }
 
-// [b,q,b,q] = [1|0, 1/0, 1|0, 1/0, ...] = [+|-, +/-, +|-, +/-, ...] = [discrete, continous, discrete, continous]
+    const std::vector<int> freq_input{1, 1, 1, 2, 2, 3};
+    const auto top_two = top_k_frequent(freq_input, 2);
+    std::cout << "top_k_frequent([1,1,1,2,2,3], 2) -> [";
+    for (std::size_t i = 0; i < top_two.size(); ++i) {
+        if (i)
+            std::cout << ", ";
+        std::cout << top_two[i];
+    }
+    std::cout << "]\n";
 
-// length = capcity (deterministic), size (continous [probabilistic percentage full]),  index (continous [probabilistic percentage full])
+    const std::vector<std::string> message{"qpp", "arrays", "hashing"};
+    const std::string encoded = encode(message);
+    const auto decoded = decode(encoded);
+    std::cout << "encode(['qpp','arrays','hashing']) -> '" << encoded << "'\n";
+    std::cout << "decode(above) -> [";
+    for (std::size_t i = 0; i < decoded.size(); ++i) {
+        if (i)
+            std::cout << ", ";
+        std::cout << decoded[i];
+    }
+    std::cout << "]\n";
 
-// Both the data and storage size of data is probabilisticly continous but capicty is decrete and limited by real world storage constraints. 
-// to make it  probabilisticly continouswould require inifte space or percentage sized blocks storage units with discrete abstract capcity (1 unit size)  
+    const std::vector<int> products_input{1, 2, 3, 4};
+    const auto products = product_except_self(products_input);
+    std::cout << "product_except_self([1,2,3,4]) -> [";
+    for (std::size_t i = 0; i < products.size(); ++i) {
+        if (i)
+            std::cout << ", ";
+        std::cout << products[i];
+    }
+    std::cout << "]\n";
 
-// entanglement hashing 
-// bell states
-// 11 + 00
-// 10 + 01
-// 01 + 10
-// 00 + 11
+    const std::vector<int> sequence_input{100, 4, 200, 1, 3, 2};
+    std::cout << "longest_consecutive([100,4,200,1,3,2]) -> "
+              << longest_consecutive(sequence_input) << "\n\n";
 
-// Key + value pairs (if you knew the key its counterpart is its value )  
-// 11 + 00
-// 00 + 11
+    // Quantum-flavoured demonstrations
+    const std::vector<int> bit_pattern{1, 0, 1, 1};
+    qpp::qclass bit_register = make_bit_register(bit_pattern);
+    print_state(bit_register.data(), "Classical bit register");
+    std::cout << '\n';
 
-// key-value + value-key pairs (you can search a key to find its value or search a value to find its key)
-// 10 + 01
-// 01 + 10
+    const double pi = std::acos(-1.0);
+    const std::vector<double> qubit_angles{0.0, pi / 3.0, pi / 2.0};
+    qpp::qclass qubit_register = make_qubit_register(qubit_angles);
+    print_state(qubit_register.data(), "Analog qubit register");
+    std::cout << '\n';
 
-// entangled hashmap
-// key = value (11 + 00) or value = key (00 + 11)
-// call key to get value (10 + 01) or call value to get key (01 + 10)
+    // Hybrid [b, q, b, q] register built from helper outputs
+    const std::vector<int> hybrid_bits{1, 0};
+    const std::vector<double> hybrid_angles{pi / 4.0, pi / 2.5};
+    qpp::qclass bit0 = make_bit_register({hybrid_bits[0]});
+    qpp::qclass bit1 = make_bit_register({hybrid_bits[1]});
+    qpp::qclass qubit0 = make_qubit_register({hybrid_angles[0]});
+    qpp::qclass qubit1 = make_qubit_register({hybrid_angles[1]});
 
-// key = 01 + 10
-// value = 10 + 01
-// hashmap = 11 (key <-> value) = 11 ((01 + 10) <-> (10 + 01))
+    qpp::qclass hybrid(4);
+    auto& hybrid_state = hybrid.data().amplitude;
+    std::array<std::array<std::complex<double>, 2>, 4> contributions{};
+    contributions[0] = {bit0.data().amplitude[0], bit0.data().amplitude[1]};
+    contributions[1] = {qubit0.data().amplitude[0], qubit0.data().amplitude[1]};
+    contributions[2] = {bit1.data().amplitude[0], bit1.data().amplitude[1]};
+    contributions[3] = {qubit1.data().amplitude[0], qubit1.data().amplitude[1]};
 
-// hashmap[key] = 11(01 + 10) = (1101 + 1110 <-> 1110 + 1101) = 11(10 + 01) = hashmap[value] -> 10 + 01 = value
-// hashmap[value] = 11(10 + 01) = (1110 + 1101 <-> 1101 + 1110) = 11(01 + 10) = hashmap[key] -> 01 + 10 = key
+    for (auto& amp : hybrid_state)
+        amp = {0.0, 0.0};
 
+    for (std::size_t basis = 0; basis < hybrid_state.size(); ++basis) {
+        std::complex<double> amplitude(1.0, 0.0);
+        amplitude *= contributions[0][(basis >> 0) & 1u];
+        amplitude *= contributions[1][(basis >> 1) & 1u];
+        amplitude *= contributions[2][(basis >> 2) & 1u];
+        amplitude *= contributions[3][(basis >> 3) & 1u];
+        hybrid_state[basis] = amplitude;
+    }
+
+    double hybrid_norm = 0.0;
+    for (const auto& amp : hybrid_state)
+        hybrid_norm += std::norm(amp);
+    if (hybrid_norm > 0.0) {
+        const double inv = 1.0 / std::sqrt(hybrid_norm);
+        for (auto& amp : hybrid_state)
+            amp *= inv;
+    }
+
+    print_state(hybrid.data(), "Hybrid [b,q,b,q] register");
+    std::cout << '\n';
+
+    // Entangled hashing demonstration
+    const auto entangled_states = make_entangled_key_value_pair();
+    demonstrate_entanglement(entangled_states[0], "Bell pair |key=value>");
+    demonstrate_entanglement(entangled_states[1],
+                             "Bell pair |key<->value>");
+
+    return 0;
+}
