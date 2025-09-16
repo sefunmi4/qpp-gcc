@@ -1,0 +1,79 @@
+// 1. Contains Duplicates
+// Given an integer array nums, return true if any value appears more than once in the array, otherwise return false.
+
+// 2. Valid Anagram  
+// Given two strings s and t, return true if the two strings are anagrams of each other, otherwise return false.
+// An anagram is a string that contains the exact same characters as another string, but the order of the characters can be different.
+
+// 3. Two Sum 
+// Given an array of integers nums and an integer target, return the indices i and j such that nums[i] + nums[j] == target and i != j.
+// You may assume that every input has exactly one pair of indices i and j that satisfy the condition.
+// Return the answer with the smaller index first.
+
+// 4. Group Anagrams
+// Given an array of strings strs, group all the anagrams together into sublists. You may return the output in any order.
+// An anagram is a string that contains the same characters as another string, but the order of the characters can be different.
+
+// 5. Top K frequent Elements 
+// Given an integer array nums and an integer k, return the k most frequent elements within the array.
+// The test cases are generated such that the answer is always unique.
+// You may return the output in any order.
+
+// 6. Encode & Decode String
+// Design an algorithm to encode a list of strings into a single string. The encoded string is then decoded back to the original list of strings.
+// Please implement encode and decode
+
+// 7. Product of Array Except Self 
+// Given an integer array nums, return an array output where output[i] is the product of all the elements of nums except nums[i].
+// Each product is guaranteed to fit in a 32-bit integer.
+// Follow-up: Could you solve it in O(n) time without using the division operation?
+
+// 8. Longest Consecutive Sequence
+// Given an array of integers nums, return the length of the longest consecutive sequence of elements that can be formed.
+// A consecutive sequence is a sequence of elements in which each element is exactly 1 greater than the previous element. The elements do not have to be consecutive in the original array.
+// You must write an algorithm that runs in O(n) time.
+
+
+
+
+// building an arrays from bits and o qbits
+
+// 0=0 -=90 1=180 +=270
+
+// [b,b,b,b] = [1|0, 1|0, 1|0, 1|0, ...] = [+|-, +|-, +|-, +|-, ...] =discrete/digital/ 0 or 180 / 100% - (100% to 0%) = 0% to 100%
+
+// [q,q,q,q] = [1/0, 1/0, 1/0, 1/0, ...] = [+/-, +/-, +/-, +/-, ...] = continous/analog/ 0 to 360 / (0% to 100%) - (100% to 0%) = -100%(left 1) to -50%(-) to 0%(0) to 50%(+) to 100%(right 1) 
+
+// [b,q,b,q] = [1|0, 1/0, 1|0, 1/0, ...] = [+|-, +/-, +|-, +/-, ...] = [discrete, continous, discrete, continous]
+
+// length = capcity (deterministic), size (continous [probabilistic percentage full]),  index (continous [probabilistic percentage full])
+
+// Both the data and storage size of data is probabilisticly continous but capicty is decrete and limited by real world storage constraints. 
+// to make it  probabilisticly continouswould require inifte space or percentage sized blocks storage units with discrete abstract capcity (1 unit size)  
+
+// entanglement hashing 
+// bell states
+// 11 + 00
+// 10 + 01
+// 01 + 10
+// 00 + 11
+
+// Key + value pairs (if you knew the key its counterpart is its value )  
+// 11 + 00
+// 00 + 11
+
+// key-value + value-key pairs (you can search a key to find its value or search a value to find its key)
+// 10 + 01
+// 01 + 10
+
+// entangled hashmap
+// key = value (11 + 00) or value = key (00 + 11)
+// call key to get value (10 + 01) or call value to get key (01 + 10)
+
+// key = 01 + 10
+// value = 10 + 01
+// hashmap = 11 (key <-> value) = 11 ((01 + 10) <-> (10 + 01))
+
+// hashmap[key] = 11(01 + 10) = (1101 + 1110 <-> 1110 + 1101) = 11(10 + 01) = hashmap[value] -> 10 + 01 = value
+// hashmap[value] = 11(10 + 01) = (1110 + 1101 <-> 1101 + 1110) = 11(01 + 10) = hashmap[key] -> 01 + 10 = key
+
