@@ -16,22 +16,71 @@
 #include "qpp/pbool.h"
 #include "qpp/qstruct.hpp"
 
-namespace qpp::examples::arrays_and_hashing {
 
+namespace qpp::examples::arrays_and_hashing {
 // -----------------------------------------------------------------------------
 // Classical helper algorithms
 // -----------------------------------------------------------------------------
 
+/// Given an integer array list, return true if any value appears 
+/// more than once in the array, otherwise return false.
+
+/// 1. Input to Output: E(n) = Input(n) = Output(n)
+/// Simple Case: [1,2,3,3,4] -> True (3)
+/// Normal Case: [1,2,3,4,3]  -> True (3)
+/// Invalid Case: [1,2,3,4,'s'] or [] -> False (invalid) = -1 = error
+/// Corner Case: [1,2,3,4] or [1,2,3,4,'s']  -> False (no duplicates)
+
+/// 2. Process: E(n) = O(n) = S(n) + cT(n)
+/// Add Information: Input(0) = Output(1) - Inject 
+/// remove Information: Input(1) = Output(0) - Select 
+/// Modify Information: Input(1) = Output(0.5) - Derive
+/// Transfer Information: Input(1) = Output(1) - Format
+
+/// 3. Approach: Input => process => output
+/// Algorithm: Input => Preprocess => process => postprocess => output
+/// Bruteforce: 
+/// Optimized: 
+///     patterns  
+///     Redundancy 
+///     Bottle neck
+
 /// Return true when the input contains any duplicate values.
-inline bool contains_duplicates(const std::vector<int>& nums) {
-    std::unordered_set<int> seen;
-    seen.reserve(nums.size());
-    for (int value : nums) {
-        if (!seen.insert(value).second)
+inline bool contains_duplicates(const std::vector<int>& list) {
+    // assign set of visited items
+    std::unordered_set<int> visited;
+    // set the size 
+    visited.reserve(list.size());
+    // for each item in vector list
+    for (int item : list) {
+        // check if item is in visited set
+        if (visited.find(item) != visited.end())
             return true;
+        // add item to visited set
+        visited.insert(item);
     }
+    //return false if no duplicates are found
     return false;
 }
+
+/// Return true when the input contains any duplicate values.
+inline bool quantum_contains_duplicates(const std::qvector<qint>& list) {
+    // assign set of visited items
+    std::entangled_set<qint> visited;
+    // set the size 
+    visited.reserve(list.size());
+    // for each item in vector list
+    for (int item : list) {
+        // check if item is in visited set
+        if (visited.find(item) != visited.end())
+            return true;
+        // add item to visited set
+        visited.insert(item);
+    }
+    //return false if no duplicates are found
+    return false;
+}
+
 
 /// Check whether two strings are anagrams of one another.
 inline bool valid_anagram(std::string_view s, std::string_view t) {
