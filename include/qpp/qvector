@@ -1,0 +1,18 @@
+#pragma once
+
+#include <vector>
+
+namespace std {
+
+/**
+ * @brief Alias exposing the standard dynamic array as a quantum vector.
+ *
+ * Providing this alias allows quantum-specific code to reference a qvector
+ * while reusing the optimised implementation of `std::vector` and its
+ * allocator-aware interface.
+ */
+template <typename T, typename Allocator = std::allocator<T>>
+using qvector = std::vector<T, Allocator>;
+
+} // namespace std
+
