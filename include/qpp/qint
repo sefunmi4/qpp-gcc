@@ -1,0 +1,14 @@
+#pragma once
+
+#include <cstdint>
+
+/**
+ * @brief Quantum integer type alias.
+ *
+ * This type alias is provided to allow quantum-oriented code to refer to a
+ * dedicated integral type while still leveraging the standard 64-bit integer
+ * implementation.  Using a fixed-width signed integer ensures deterministic
+ * behaviour across platforms.
+ */
+using qint = std::int64_t;
+
