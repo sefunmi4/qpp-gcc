@@ -13,8 +13,11 @@
 #include <utility>
 #include <vector>
 
+#include "qpp/entangled_set"
 #include "qpp/pbool.h"
+#include "qpp/qint"
 #include "qpp/qstruct.hpp"
+#include "qpp/qvector"
 
 
 namespace qpp::examples::arrays_and_hashing {
@@ -81,6 +84,17 @@ inline bool quantum_contains_duplicates(const std::qvector<qint>& list) {
     return false;
 }
 
+/// Quantum-flavoured duplicate detection using an entangled hash set.
+inline bool quantum_contains_duplicates(const std::qvector<qint>& list) {
+    std::entangled_set<qint> visited;
+    visited.reserve(list.size());
+    for (const auto& item : list) {
+        if (visited.find(item) != visited.end())
+            return true;
+        visited.insert(item);
+    }
+    return false;
+}
 
 /// Check whether two strings are anagrams of one another.
 inline bool valid_anagram(std::string_view s, std::string_view t) {

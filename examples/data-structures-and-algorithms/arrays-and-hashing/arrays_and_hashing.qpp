@@ -93,6 +93,21 @@ int main() {
     std::cout << "contains_duplicates([1,2,3,1]) -> "
               << contains_duplicates(duplicate_input) << '\n';
 
+    const std::qvector<::qint> quantum_duplicate_input{
+        ::qint{1, -1, 1, -1},
+        ::qint{-3, 5, -7, 9},
+        ::qint{1, -1, 1, -1},
+    };
+    const std::qvector<::qint> quantum_unique_input{
+        ::qint{-2, -2, -2, -2},
+        ::qint{4, 0, 4, 0},
+        ::qint{7, 7, -3, -3},
+    };
+    std::cout << "quantum_contains_duplicates([...duplicate...]) -> "
+              << quantum_contains_duplicates(quantum_duplicate_input) << '\n';
+    std::cout << "quantum_contains_duplicates([...unique...]) -> "
+              << quantum_contains_duplicates(quantum_unique_input) << '\n';
+
     std::cout << "valid_anagram('listen','silent') -> "
               << valid_anagram("listen", "silent") << '\n';
 
