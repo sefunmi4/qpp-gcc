@@ -1,0 +1,22 @@
+#pragma once
+
+#include <functional>
+#include <unordered_set>
+
+namespace std {
+
+/**
+ * @brief A convenience alias representing a hash set of entangled items.
+ *
+ * The alias forwards directly to `std::unordered_set`, providing an intuitive
+ * name for collections that conceptually track entangled quantum states while
+ * retaining the full interface of an unordered set.
+ */
+template <typename Key,
+          typename Hash = std::hash<Key>,
+          typename KeyEqual = std::equal_to<Key>,
+          typename Allocator = std::allocator<Key>>
+using entangled_set = std::unordered_set<Key, Hash, KeyEqual, Allocator>;
+
+} // namespace std
+
