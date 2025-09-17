@@ -1,0 +1,333 @@
+#pragma once
+
+#include <cstddef>
+#include <cstdint>
+#include <cstring>
+#include <functional>
+#include <memory>
+#include <string>
+#include <string_view>
+#include <tuple>
+#include <type_traits>
+#include <unordered_set>
+#include <utility>
+
+namespace qpp::entangled {
+
+/**
+ * @brief Shared hashing material for entangled containers.
+ */
+struct context {
+    std::uint64_t key0;   ///< Secret key material (part 1).
+    std::uint64_t key1;   ///< Secret key material (part 2).
+    std::uint64_t domain; ///< Domain separation tag.
+    std::uint64_t epoch;  ///< Epoch counter for salt rotation.
+
+    /// Create a copy of the context with a different domain tag.
+    [[nodiscard]] constexpr context with_domain(std::uint64_t domain_tag) const noexcept {
+        context copy = *this;
+        copy.domain = domain_tag;
+        return copy;
+    }
+
+    /// Create a copy of the context with a different epoch value.
+    [[nodiscard]] constexpr context with_epoch(std::uint64_t epoch_value) const noexcept {
+        context copy = *this;
+        copy.epoch = epoch_value;
+        return copy;
+    }
+
+    /// Create a copy of the context with the epoch incremented by one.
+    [[nodiscard]] constexpr context next_epoch() const noexcept {
+        context copy = *this;
+        ++copy.epoch;
+        return copy;
+    }
+};
+
+using context_ptr = std::shared_ptr<const context>;
+
+namespace detail {
+
+inline constexpr std::uint64_t golden_ratio = 0x9e3779b97f4a7c15ull;
+inline constexpr std::uint64_t mix_constant = 0x517cc1b727220a95ull;
+inline constexpr std::uint64_t tuple_constant = 0x6a09e667f3bcc909ull;
+
+template <typename T>
+using remove_cvref_t = std::remove_cv_t<std::remove_reference_t<T>>;
+
+template <typename T>
+struct is_std_string : std::false_type {};
+
+template <typename Traits, typename Allocator>
+struct is_std_string<std::basic_string<char, Traits, Allocator>> : std::true_type {};
+
+template <typename T>
+struct is_std_string_view : std::false_type {};
+
+template <typename Traits>
+struct is_std_string_view<std::basic_string_view<char, Traits>> : std::true_type {};
+
+template <typename T>
+struct is_char_pointer : std::false_type {};
+
+template <>
+struct is_char_pointer<char*> : std::true_type {};
+
+template <>
+struct is_char_pointer<const char*> : std::true_type {};
+
+template <>
+struct is_char_pointer<volatile char*> : std::true_type {};
+
+template <>
+struct is_char_pointer<const volatile char*> : std::true_type {};
+
+template <typename T>
+struct is_char_array : std::false_type {};
+
+template <std::size_t N>
+struct is_char_array<char[N]> : std::true_type {};
+
+template <std::size_t N>
+struct is_char_array<const char[N]> : std::true_type {};
+
+template <std::size_t N>
+struct is_char_array<volatile char[N]> : std::true_type {};
+
+template <std::size_t N>
+struct is_char_array<const volatile char[N]> : std::true_type {};
+
+template <typename T>
+struct is_string_like
+    : std::bool_constant<is_std_string<remove_cvref_t<T>>::value ||
+                         is_std_string_view<remove_cvref_t<T>>::value ||
+                         is_char_pointer<remove_cvref_t<T>>::value ||
+                         is_char_array<remove_cvref_t<T>>::value> {};
+
+template <typename T>
+inline constexpr bool is_string_like_v = is_string_like<T>::value;
+
+template <typename T, typename = void>
+struct is_tuple_like : std::false_type {};
+
+template <typename T>
+struct is_tuple_like<T, std::void_t<decltype(std::tuple_size<T>::value)>> : std::true_type {};
+
+inline constexpr std::uint64_t splitmix64(std::uint64_t x) noexcept {
+    x += golden_ratio;
+    x = (x ^ (x >> 30)) * 0xbf58476d1ce4e5b9ull;
+    x = (x ^ (x >> 27)) * 0x94d049bb133111ebull;
+    x ^= (x >> 31);
+    return x;
+}
+
+inline std::uint64_t load64(const void* data) noexcept {
+    std::uint64_t value;
+    std::memcpy(&value, data, sizeof(value));
+    return value;
+}
+
+inline std::uint64_t mix128(std::uint64_t a, std::uint64_t b) noexcept {
+    return splitmix64(a ^ (b + golden_ratio));
+}
+
+inline std::uint64_t derive_salt(const context& ctx) noexcept {
+    const std::uint64_t a = ctx.key0 ^ ctx.domain;
+    const std::uint64_t b = ctx.key1 ^ (ctx.epoch * mix_constant);
+    return splitmix64(mix128(a, b));
+}
+
+inline std::uint64_t hash_bytes(const void* data, std::size_t length, std::uint64_t salt) noexcept {
+    const auto* bytes = static_cast<const std::uint8_t*>(data);
+    std::uint64_t h = splitmix64(salt ^ (length * 0x27d4eb2fu));
+    while (length >= sizeof(std::uint64_t)) {
+        h = splitmix64(h ^ load64(bytes));
+        bytes += sizeof(std::uint64_t);
+        length -= sizeof(std::uint64_t);
+    }
+
+    std::uint64_t tail = 0;
+    for (std::size_t i = 0; i < length; ++i) {
+        tail |= static_cast<std::uint64_t>(bytes[i]) << (8U * i);
+    }
+    return splitmix64(h ^ tail);
+}
+
+inline constexpr context default_context() noexcept {
+    return context{0x243f6a8885a308d3ull, 0x13198a2e03707344ull, 0x9e3779b97f4a7c15ull, 0ull};
+}
+
+inline std::string_view to_string_view(const std::string& value) noexcept {
+    return std::string_view{value.data(), value.size()};
+}
+
+inline std::string_view to_string_view(std::string_view value) noexcept { return value; }
+
+inline std::string_view to_string_view(const char* value) noexcept {
+    return value != nullptr ? std::string_view{value} : std::string_view{};
+}
+
+inline std::string_view to_string_view(char* value) noexcept {
+    return value != nullptr ? std::string_view{value} : std::string_view{};
+}
+
+template <std::size_t N>
+inline std::string_view to_string_view(const char (&value)[N]) noexcept {
+    return std::string_view{value, N ? N - 1U : 0U};
+}
+
+template <std::size_t N>
+inline std::string_view to_string_view(char (&value)[N]) noexcept {
+    return std::string_view{value, N ? N - 1U : 0U};
+}
+
+template <typename T>
+std::uint64_t hash_value(const T& value, std::uint64_t salt) noexcept;
+
+template <typename Tuple, std::size_t... Indices>
+std::uint64_t hash_tuple_impl(const Tuple& value, std::uint64_t salt, std::index_sequence<Indices...>) noexcept {
+    std::uint64_t h = splitmix64(salt ^ (sizeof...(Indices) * mix_constant));
+    ((h = splitmix64(h ^ hash_value(std::get<Indices>(value),
+                                     salt ^ (tuple_constant + golden_ratio * Indices)))), ...);
+    return h;
+}
+
+template <typename Tuple>
+std::uint64_t hash_tuple(const Tuple& value, std::uint64_t salt) noexcept {
+    return hash_tuple_impl(value, salt, std::make_index_sequence<std::tuple_size<Tuple>::value>{});
+}
+
+template <typename T>
+std::uint64_t hash_integral(T value, std::uint64_t salt) noexcept {
+    using Unsigned = std::make_unsigned_t<T>;
+    return splitmix64(static_cast<std::uint64_t>(static_cast<Unsigned>(value)) ^ salt);
+}
+
+template <typename T>
+std::uint64_t hash_value(const T& value, std::uint64_t salt) noexcept {
+    using Decayed = remove_cvref_t<T>;
+    if constexpr (std::is_enum_v<Decayed>) {
+        return hash_integral(static_cast<std::underlying_type_t<Decayed>>(value), salt);
+    } else if constexpr (std::is_integral_v<Decayed>) {
+        return hash_integral(value, salt);
+    } else if constexpr (std::is_floating_point_v<Decayed>) {
+        return hash_bytes(&value, sizeof(value), salt);
+    } else if constexpr (is_string_like_v<Decayed>) {
+        const std::string_view view = to_string_view(value);
+        return hash_bytes(view.data(), view.size(), salt);
+    } else if constexpr (is_tuple_like<Decayed>::value) {
+        return hash_tuple(value, salt);
+    } else if constexpr (std::is_pointer_v<Decayed>) {
+        return splitmix64(reinterpret_cast<std::uintptr_t>(value) ^ salt);
+    } else {
+        const std::size_t h = std::hash<Decayed>{}(value);
+        return splitmix64(static_cast<std::uint64_t>(h) ^ salt);
+    }
+}
+
+template <typename Key>
+struct is_string_key : std::disjunction<is_std_string<remove_cvref_t<Key>>, is_std_string_view<remove_cvref_t<Key>>> {};
+
+template <typename Key, typename Lookup>
+struct allows_heterogeneous_hash
+    : std::conjunction<is_string_key<Key>,
+                       is_string_like<remove_cvref_t<Lookup>>,
+                       std::negation<std::is_same<remove_cvref_t<Key>, remove_cvref_t<Lookup>>>> {};
+
+template <typename L, typename R>
+bool equals(const L& lhs, const R& rhs) {
+    if constexpr (is_string_like_v<L> && is_string_like_v<R>) {
+        const std::string_view left = to_string_view(lhs);
+        const std::string_view right = to_string_view(rhs);
+        return left == right;
+    } else {
+        return lhs == rhs;
+    }
+}
+
+} // namespace detail
+
+/**
+ * @brief Keyed hasher that derives entropy from a shared entanglement context.
+ */
+template <typename Key>
+struct hasher {
+    using argument_type = Key;
+    using result_type = std::size_t;
+    using is_transparent = void;
+
+    hasher()
+        : ctx_{std::make_shared<context>(detail::default_context())},
+          salt_{detail::derive_salt(*ctx_)} {}
+
+    explicit hasher(context_ptr ctx)
+        : ctx_{std::move(ctx)} {
+        if (!ctx_) {
+            ctx_ = std::make_shared<context>(detail::default_context());
+        }
+        salt_ = detail::derive_salt(*ctx_);
+    }
+
+    result_type operator()(const Key& value) const noexcept {
+        return static_cast<result_type>(detail::hash_value(value, salt_));
+    }
+
+    template <typename Lookup,
+              typename = std::enable_if_t<detail::allows_heterogeneous_hash<Key, Lookup>::value>>
+    result_type operator()(const Lookup& value) const noexcept {
+        return static_cast<result_type>(detail::hash_value(value, salt_));
+    }
+
+    [[nodiscard]] const context_ptr& context() const noexcept { return ctx_; }
+
+private:
+    context_ptr ctx_;
+    std::uint64_t salt_;
+};
+
+/**
+ * @brief Transparent equality comparison supporting heterogeneous lookups.
+ */
+struct transparent_equal {
+    using is_transparent = void;
+
+    template <typename L, typename R>
+    bool operator()(const L& lhs, const R& rhs) const {
+        return detail::equals(lhs, rhs);
+    }
+};
+
+inline context_ptr make_context(std::uint64_t key0,
+                                std::uint64_t key1,
+                                std::uint64_t domain = detail::golden_ratio,
+                                std::uint64_t epoch = 0ull) {
+    return std::make_shared<context>(context{key0, key1, domain, epoch});
+}
+
+inline context_ptr make_context(context value) {
+    return std::make_shared<context>(std::move(value));
+}
+
+inline context_ptr make_default_context() {
+    return std::make_shared<context>(detail::default_context());
+}
+
+template <typename Key,
+          typename Hash = hasher<Key>,
+          typename KeyEqual = transparent_equal,
+          typename Allocator = std::allocator<Key>>
+using set = std::unordered_set<Key, Hash, KeyEqual, Allocator>;
+
+} // namespace qpp::entangled
+
+namespace std {
+
+template <typename Key,
+          typename Hash = ::qpp::entangled::hasher<Key>,
+          typename KeyEqual = ::qpp::entangled::transparent_equal,
+          typename Allocator = std::allocator<Key>>
+using entangled_set = ::qpp::entangled::set<Key, Hash, KeyEqual, Allocator>;
+
+} // namespace std
+
