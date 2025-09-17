@@ -1,14 +1,124 @@
 #pragma once
 
+#include <complex>
+#include <cstddef>
 #include <cstdint>
+#include <functional>
 
 /**
- * @brief Quantum integer type alias.
+ * @brief Represents a four-dimensional quantum integer state.
  *
- * This type alias is provided to allow quantum-oriented code to refer to a
- * dedicated integral type while still leveraging the standard 64-bit integer
- * implementation.  Using a fixed-width signed integer ensures deterministic
- * behaviour across platforms.
+ * A quantum integer encodes amplitudes along orthogonal axes describing both
+ * spatial orientation (\f$x, y, z\f$) and temporal evolution (\f$t\f$).
+ * Each axis stores a signed amplitude whose polarity maps to a descriptive
+ * action:
+ *
+ * - @c x : negative (-1) -> @c 0 (up / north), positive (+1) -> @c 1 (down / south)
+ * - @c y : negative (-1) -> @c + (left / east), positive (+1) -> @c - (right / west)
+ * - @c z : negative (-1) -> @c +45° (back-flip), positive (+1) -> @c -45° (front-flip)
+ * - @c t : negative (-1) -> @c +45i (backward-flip), positive (+1) -> @c -45i (forward-flip)
+ *
+ * The sequential layout of the structure mirrors execution ordering; reading
+ * from top to bottom corresponds to advancing through time steps, matching the
+ * sequential semantics of the host language.
  */
-using qint = std::int64_t;
+struct qint {
+    /// Discrete amplitude value for each axis.
+    enum class amplitude : std::int8_t {
+        negative = -1,
+        positive = 1,
+    };
+
+    amplitude x; ///< Spatial north/south orientation.
+    amplitude y; ///< Spatial east/west orientation.
+    amplitude z; ///< Rotational orientation.
+    amplitude t; ///< Temporal orientation.
+
+    /**
+     * @brief Construct a quantum integer from explicit amplitude values.
+     */
+    constexpr qint(amplitude x_axis = amplitude::negative,
+                   amplitude y_axis = amplitude::negative,
+                   amplitude z_axis = amplitude::negative,
+                   amplitude t_axis = amplitude::negative) noexcept
+        : x{x_axis}, y{y_axis}, z{z_axis}, t{t_axis} {}
+
+    /**
+     * @brief Construct from integral polarity, normalising any non-positive
+     *        value to the negative amplitude.
+     */
+    constexpr qint(int x_axis, int y_axis, int z_axis, int t_axis) noexcept
+        : x{normalise(x_axis)},
+          y{normalise(y_axis)},
+          z{normalise(z_axis)},
+          t{normalise(t_axis)} {}
+
+    /// Map an integral value to an @ref amplitude.
+    static constexpr amplitude normalise(int value) noexcept {
+        return value >= 1 ? amplitude::positive : amplitude::negative;
+    }
+
+    /// Convert an amplitude to the binary interpretation for orientation bits.
+    static constexpr std::size_t binary_mapping(amplitude value) noexcept {
+        return value == amplitude::positive ? 1U : 0U;
+    }
+
+    /// Convert an amplitude to the binary interpretation for the x-axis.
+    static constexpr int x_mapping(amplitude value) noexcept {
+        return value == amplitude::positive ? 1 : 0;
+    }
+
+    /// Convert an amplitude to the east/west symbolic interpretation.
+    static constexpr char y_mapping(amplitude value) noexcept {
+        return value == amplitude::positive ? '-' : '+';
+    }
+
+    /// Convert an amplitude to the rotational degree representation.
+    static constexpr int z_mapping(amplitude value) noexcept {
+        return value == amplitude::positive ? -45 : 45;
+    }
+
+    /// Convert an amplitude to the temporal imaginary rotation.
+    static constexpr std::complex<int> t_mapping(amplitude value) noexcept {
+        return value == amplitude::positive ? std::complex<int>{0, -45}
+                                            : std::complex<int>{0, 45};
+    }
+
+    /// Retrieve the binary representation of the x-axis amplitude.
+    [[nodiscard]] constexpr int x_step() const noexcept { return x_mapping(x); }
+
+    /// Retrieve the symbolic representation of the y-axis amplitude.
+    [[nodiscard]] constexpr char y_step() const noexcept { return y_mapping(y); }
+
+    /// Retrieve the rotational representation of the z-axis amplitude.
+    [[nodiscard]] constexpr int z_step() const noexcept { return z_mapping(z); }
+
+    /// Retrieve the temporal imaginary rotation of the t-axis amplitude.
+    [[nodiscard]] constexpr std::complex<int> t_step() const noexcept {
+        return t_mapping(t);
+    }
+
+    /// Equality comparison for unordered containers and direct comparison.
+    [[nodiscard]] constexpr bool operator==(const qint& other) const noexcept {
+        return x == other.x && y == other.y && z == other.z && t == other.t;
+    }
+};
+
+namespace qpp_qint_detail {
+[[nodiscard]] constexpr std::size_t encode(const qint& value) noexcept {
+    return (qint::binary_mapping(value.x)) |
+           (qint::binary_mapping(value.y) << 1U) |
+           (qint::binary_mapping(value.z) << 2U) |
+           (qint::binary_mapping(value.t) << 3U);
+}
+} // namespace qpp_qint_detail
+
+namespace std {
+/// Hash specialisation enabling use of qint in unordered containers.
+template <> struct hash<::qint> {
+    [[nodiscard]] constexpr std::size_t operator()(const ::qint& value) const noexcept {
+        return ::qpp_qint_detail::encode(value);
+    }
+};
+} // namespace std
 
