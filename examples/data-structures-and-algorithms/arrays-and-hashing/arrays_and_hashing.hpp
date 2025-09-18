@@ -73,7 +73,7 @@ inline bool quantum_contains_duplicates(const std::qvector<qint>& list) {
     // set the size 
     visited.reserve(list.size());
     // for each item in vector list
-    for (int item : list) {
+    for (const auto& item : list) {
         // check if item is in visited set
         if (visited.find(item) != visited.end())
             return true;
@@ -81,18 +81,6 @@ inline bool quantum_contains_duplicates(const std::qvector<qint>& list) {
         visited.insert(item);
     }
     //return false if no duplicates are found
-    return false;
-}
-
-/// Quantum-flavoured duplicate detection using an entangled hash set.
-inline bool quantum_contains_duplicates(const std::qvector<qint>& list) {
-    std::entangled_set<qint> visited;
-    visited.reserve(list.size());
-    for (const auto& item : list) {
-        if (visited.find(item) != visited.end())
-            return true;
-        visited.insert(item);
-    }
     return false;
 }
 
