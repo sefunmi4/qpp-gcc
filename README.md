@@ -43,6 +43,58 @@ new language constructs and tooling to support quantum-aware C++ development.
 
 These features are experimental and not part of upstream GCC.
 
+## World selection engine
+
+The `worlds_lib` component implements the "quantum worlds" selection
+engine that powers sampling-heavy demos and experimental analyses. It
+encodes each candidate world as a prime-based signature, evaluates
+overlap in a spectral domain, and then samples from either a classical
+or simulated quantum backend.
+
+### Prime-based signatures
+
+`FactorRegistry` assigns unique prime numbers to every symbolic factor
+used in a `WorldSignature`. The signature stores weighted labels (for
+example `{"cat", 1.0}` or `{"wearing", 1.2}`) that describe the
+world. Multiplying the weights by their assigned primes produces a
+deterministic spectral fingerprint that is independent of the order in
+which the factors were registered.
+
+### Spectral scoring
+
+The spectral representation feeds into a Gaussian overlap kernel that
+compares how similar two worlds are. The overlap of a world with itself
+and the relationships to its neighbours are combined into a final score:
+
+- `sigma` controls the width of the Gaussian used for the overlap
+  computation. Smaller values make the engine more sensitive to small
+  spectral deviations.
+- `lambda` controls how much weight to place on relationships to other
+  worlds versus only the self overlap.
+- `temperature` adjusts how peaky or flat the post-processed score
+  distribution becomes before sampling.
+- `k` is the number of Monte-Carlo samples ("shots") to draw on the CPU
+  backend. When set to zero the engine uses the analytical softmax
+  distribution instead of sampling.
+
+All of these parameters can be configured from the `world_picker` CLI
+flags described below.
+
+### Backend options and simulator path
+
+Two backends are provided:
+
+- `cpu` draws samples using a deterministic RNG seeded per run. This is
+  useful for debugging and testing because results are reproducible.
+- `qpu_sim` produces normalized amplitudes suitable for a quantum
+  simulator and can be squared to obtain probabilities.
+
+If you replace the built-in simulator with a vendor-specific
+implementation, set the `QPP_QPU_SIM_PATH` environment variable (or add
+the simulator directory to `LD_LIBRARY_PATH`) so that the runtime can
+locate the simulator shared library. Without a valid simulator path the
+`qpu_sim` backend is unavailable.
+
 ## Installing a release
 
 Prebuilt binaries are published on the project's releases page. Download the
@@ -160,6 +212,71 @@ make -k check
 
 # Optionally install
 make install
+```
+
+### Building the world-selection tooling
+
+The CMake build also produces the standalone world-selection
+artifacts. From the repository root:
+
+```sh
+cmake -S . -B build -G Ninja   # or your preferred generator
+cmake --build build --target worlds_lib
+cmake --build build --target world_picker
+```
+
+The `worlds_lib` target contains the reusable selection engine and is a
+dependency of both the CLI and the tests. Substitute `--target
+worlds_lib worlds_tests` if you want to compile the library and the test
+binary in one command.
+
+### Running the World Picker CLI
+
+Invoke the CLI directly from the build directory. Parameters default to
+the values shown in the example below and can be overridden with
+`--backend`, `--k`, `--sigma`, `--lambda`, and `--temperature`:
+
+```sh
+./build/world_picker --backend cpu --k 128 --sigma 1.0 --lambda 0.5 --temperature 1.0
+```
+
+Sample output (with the default deterministic seed) looks like:
+
+```text
+Quantum World Picker
+Backend: CPU
+k (shots): 128
+sigma: 1
+lambda: 0.5
+temperature: 1
+
+World             Score        CPU Prob        QPU Prob  Signature
+--------------------------------------------------------------------------------
+cat                 4.9645          0.5938          0.5768  cat:1,feline:0.8,pet:0.6
+hat                 2.0303          0.0469          0.0307  accessory:0.9,fashion:0.7,hat:1
+cat_hat_pair        2.7537          0.0703          0.0632  cat:0.9,ensemble:1.1,hat:0.9
+cat_wearing_hat     3.3260          0.0625          0.1121  cat:1,hat:1,relationship:0.8,wearing:1.2
+hat_on_cat          3.4915          0.1562          0.1322  balance:0.6,cat:0.95,hat:1,on_top:1.3
+cat_hat_story       3.0501          0.0703          0.0850  adventure:1.1,cat:0.85,hat:0.85,narrative:0.75
+
+Sampled world (deterministic RNG): cat
+Most probable for CPU: cat (0.5938)
+```
+
+Switch `--backend qpu_sim` to view the simulated quantum amplitudes.
+When pointing the CLI at an external simulator, ensure the
+`QPP_QPU_SIM_PATH` variable is set as described in the world-selection
+engine overview.
+
+### Running the world-selection tests
+
+Compile the test binary and execute it either directly or via CTest:
+
+```sh
+cmake --build build --target worlds_tests
+./build/worlds_tests
+# or
+ctest --test-dir build --output-on-failure -R worlds_tests
 ```
 
 ### macOS build
