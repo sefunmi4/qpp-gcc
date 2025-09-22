@@ -27,12 +27,34 @@ project(qpp VERSION ${QPP_VERSION} LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+enable_testing()
+
+# Core library containing the quantum worlds implementation
+add_library(worlds_lib qpp/quantum_worlds.cpp)
+target_include_directories(worlds_lib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+
+# Lightweight testing framework used by unit tests
+add_library(testing_framework STATIC tests/testing_framework.cpp)
+target_include_directories(testing_framework PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/tests)
+
 # your targets here
 add_executable(qpp src/main.cpp src/compiler.cpp)  # example
 
+add_executable(world_picker apps/world_picker/main.cpp)
+target_link_libraries(world_picker PRIVATE worlds_lib)
+
+add_executable(worlds_tests tests/worlds_tests.cpp)
+target_link_libraries(worlds_tests PRIVATE worlds_lib testing_framework)
+
+add_test(NAME worlds_tests COMMAND worlds_tests)
+
 # ---------- Install rules ----------
 # Binaries
-install(TARGETS qpp RUNTIME DESTINATION bin)
+install(TARGETS qpp world_picker RUNTIME DESTINATION bin)
+install(TARGETS worlds_lib
+        ARCHIVE DESTINATION lib
+        LIBRARY DESTINATION lib
+        RUNTIME DESTINATION bin)
 # Headers (if any installable API)
 # install(DIRECTORY include/ DESTINATION include)
 
