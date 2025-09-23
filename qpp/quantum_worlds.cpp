@@ -3,7 +3,6 @@
 #include <algorithm>
 #include <cctype>
 #include <cmath>
-#include <random>
 #include <sstream>
 #include <stdexcept>
 
@@ -36,6 +35,8 @@ BackendKind parse_backend(std::string_view name) {
         return BackendKind::CPU;
     if (lowered == "qpu_sim" || lowered == "qpu-sim" || lowered == "qpu")
         return BackendKind::QPU_SIM;
+    if (lowered == "openqasm_http" || lowered == "openqasm-http" || lowered == "openqasm")
+        return BackendKind::OPENQASM_HTTP;
     throw std::invalid_argument("unknown backend: " + std::string{name});
 }
 
@@ -184,35 +185,18 @@ std::vector<double> softmax(const std::vector<double> &values, double temperatur
 }
 
 std::vector<double> sample_worlds(const std::vector<double> &weights, BackendKind backend,
-                                  std::size_t shots, unsigned seed) {
-    auto probabilities = softmax(weights);
-    if (backend == BackendKind::CPU) {
-        if (probabilities.empty())
-            return {};
-        if (shots == 0)
-            return probabilities;
-        std::vector<double> samples(probabilities.size(), 0.0);
-        std::mt19937 rng(seed);
-        std::discrete_distribution<std::size_t> dist(probabilities.begin(), probabilities.end());
-        for (std::size_t i = 0; i < shots; ++i)
-            samples[dist(rng)] += 1.0;
-        for (double &v : samples)
-            v /= static_cast<double>(shots);
-        return samples;
-    }
+                                  std::size_t shots, BackendConfiguration config) {
+    if (config.max_qubits == 0)
+        config.max_qubits = weights.size();
+    auto backend_impl = make_backend(backend, std::move(config));
+    return backend_impl->run_distribution_experiment(weights, shots);
+}
 
-    std::vector<double> amplitudes(probabilities.size(), 0.0);
-    double norm = 0.0;
-    for (std::size_t i = 0; i < probabilities.size(); ++i) {
-        amplitudes[i] = std::sqrt(probabilities[i]);
-        norm += amplitudes[i] * amplitudes[i];
-    }
-    if (norm > 0.0) {
-        double inv = 1.0 / std::sqrt(norm);
-        for (double &v : amplitudes)
-            v *= inv;
-    }
-    return amplitudes;
+std::vector<double> sample_worlds(const std::vector<double> &weights, BackendKind backend,
+                                  std::size_t shots, unsigned seed) {
+    BackendConfiguration config;
+    config.seed = seed;
+    return sample_worlds(weights, backend, shots, std::move(config));
 }
 
 QuantumFront make_quantum_front(FactorRegistry &registry, const WorldSignature &signature,

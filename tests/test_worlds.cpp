@@ -135,6 +135,34 @@ TEST(SampleWorldsTest, CpuQpuParity) {
         EXPECT_NEAR(expected[i], qpu_payload[i] * qpu_payload[i], 1e-9);
 }
 
+TEST(BackendParsingTest, RecognizesOpenQasmBackend) {
+    EXPECT_EQ(BackendKind::OPENQASM_HTTP, parse_backend("openqasm"));
+    EXPECT_EQ(BackendKind::OPENQASM_HTTP, parse_backend("OPENQASM-HTTP"));
+}
+
+TEST(OpenQasmBackendTest, SupportsCallbackSubmission) {
+    std::vector<double> weights{0.4, 1.6};
+    BackendConfiguration config;
+    config.openqasm.endpoint = "https://example.invalid/jobs";
+    config.openqasm.backend = "example-device";
+    bool invoked = false;
+    config.openqasm.submission_callback =
+        [&invoked](const std::string &qasm, std::size_t shots,
+                   const BackendConfiguration::OpenQasmHttpConfiguration &http) {
+            invoked = true;
+            EXPECT_FALSE(qasm.empty());
+            EXPECT_EQ(42u, shots);
+            EXPECT_EQ(std::string("https://example.invalid/jobs"), http.endpoint);
+            return std::vector<double>{0.25, 0.75};
+        };
+
+    auto results = sample_worlds(weights, BackendKind::OPENQASM_HTTP, 42, config);
+    ASSERT_EQ(std::size_t{2}, results.size());
+    EXPECT_NEAR(0.25, results[0], 1e-9);
+    EXPECT_NEAR(0.75, results[1], 1e-9);
+    EXPECT_TRUE(invoked);
+}
+
 TEST(QuantumFrontTest, BuildsConsistentWorld) {
     FactorRegistry registry;
     WorldSignature signature({{"f_with", 1.2}, {"g_relation", 0.6}, {"context", 0.9}});

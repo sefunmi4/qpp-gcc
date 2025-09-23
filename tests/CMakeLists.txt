@@ -6,6 +6,7 @@ target_include_directories(qpp_backend PUBLIC ${CMAKE_CURRENT_LIST_DIR}/../inclu
 
 add_library(qpp_quantum_worlds STATIC
     ${CMAKE_CURRENT_LIST_DIR}/../qpp/quantum_worlds.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/../qpp/quantum/backend.cpp
 )
 target_include_directories(qpp_quantum_worlds
     PUBLIC
