@@ -1,9 +1,13 @@
 #pragma once
 
-#include <complex>
+#include <array>
 #include <cstddef>
 #include <cstdint>
 #include <functional>
+#include <optional>
+#include <string>
+#include <unordered_map>
+#include <utility>
 
 /**
  * @brief Represents a four-dimensional quantum integer state.
@@ -23,101 +27,198 @@
  * sequential semantics of the host language.
  */
 struct qint {
-    /// Discrete amplitude value for each axis.
-    enum class amplitude : std::int8_t {
-        negative = -1,
-        positive = 1,
+    /// Handle returned by a backend when allocating a qubit.
+    struct QubitHandle {
+        std::size_t id{};
+
+        friend bool operator==(const QubitHandle&, const QubitHandle&) = default;
     };
 
-    amplitude x; ///< Spatial north/south orientation.
-    amplitude y; ///< Spatial east/west orientation.
-    amplitude z; ///< Rotational orientation.
-    amplitude t; ///< Temporal orientation.
+    /// Abstract backend API used to allocate and prepare qubits.
+    class Backend {
+    public:
+        virtual ~Backend() = default;
 
-    /**
-     * @brief Construct a quantum integer from explicit amplitude values.
-     */
-    constexpr qint(amplitude x_axis = amplitude::negative,
-                   amplitude y_axis = amplitude::negative,
-                   amplitude z_axis = amplitude::negative,
-                   amplitude t_axis = amplitude::negative) noexcept
-        : x{x_axis}, y{y_axis}, z{z_axis}, t{t_axis} {}
+        /// Allocate a fresh qubit for the provided axis label.
+        [[nodiscard]] virtual QubitHandle allocate(std::string axis_label) = 0;
 
-    /**
-     * @brief Construct from integral polarity, normalising any non-positive
-     *        value to the negative amplitude.
-     */
-    constexpr qint(int x_axis, int y_axis, int z_axis, int t_axis) noexcept
-        : x{normalise(x_axis)},
-          y{normalise(y_axis)},
-          z{normalise(z_axis)},
-          t{normalise(t_axis)} {}
+        /// Apply the sequence of legacy operations that produced @p legacy_value.
+        virtual void prepare_legacy(const QubitHandle& handle,
+                                    int legacy_value,
+                                    int resolved_orientation,
+                                    bool used_sine_weighting) = 0;
 
-    /// Map an integral value to an @ref amplitude.
-    static constexpr amplitude normalise(int value) noexcept {
-        return value >= 1 ? amplitude::positive : amplitude::negative;
+        /// Perform a measurement and collapse the qubit.
+        [[nodiscard]] virtual int measure(const QubitHandle& handle) = 0;
+    };
+
+    /// Deferred measurement of a specific axis.
+    class MeasurementHandle {
+    public:
+        MeasurementHandle() = default;
+
+        MeasurementHandle(const qint* owner, std::size_t axis_index) noexcept
+            : owner_{owner}, axis_index_{axis_index} {}
+
+        /// Sample the associated qubit, requesting a measurement from the backend.
+        [[nodiscard]] int sample() const { return owner_->sample_axis(axis_index_); }
+
+        /// Convenience callable interface for ergonomic usage.
+        [[nodiscard]] int operator()() const { return sample(); }
+
+    private:
+        const qint* owner_{};
+        std::size_t axis_index_{};
+    };
+
+    /// Construct a @ref qint using the shared legacy backend.
+    qint(int x_axis = -1, int y_axis = -1, int z_axis = -1, int t_axis = -1)
+        : qint(default_backend(), x_axis, y_axis, z_axis, t_axis) {}
+
+    /// Construct a @ref qint using an explicit backend/context.
+    qint(Backend& backend,
+         int x_axis = -1,
+         int y_axis = -1,
+         int z_axis = -1,
+         int t_axis = -1)
+        : backend_{&backend},
+          qubits_{backend.allocate("x"), backend.allocate("y"),
+                  backend.allocate("z"), backend.allocate("t")},
+          measurement_cache_{},
+          last_orientations_{-1, -1, -1, -1} {
+        prepare_axis(0U, x_axis);
+        prepare_axis(1U, y_axis);
+        prepare_axis(2U, z_axis);
+        prepare_axis(3U, t_axis);
     }
 
-    /// Convert an amplitude to the binary interpretation for orientation bits.
-    static constexpr std::size_t binary_mapping(amplitude value) noexcept {
-        return value == amplitude::positive ? 1U : 0U;
+    /// Deferred measurement handle for the x-axis orientation.
+    [[nodiscard]] MeasurementHandle x_step() const noexcept {
+        return MeasurementHandle{this, 0U};
     }
 
-    /// Convert an amplitude to the binary interpretation for the x-axis.
-    static constexpr int x_mapping(amplitude value) noexcept {
-        return value == amplitude::positive ? 1 : 0;
+    /// Deferred measurement handle for the y-axis orientation.
+    [[nodiscard]] MeasurementHandle y_step() const noexcept {
+        return MeasurementHandle{this, 1U};
     }
 
-    /// Convert an amplitude to the east/west symbolic interpretation.
-    static constexpr char y_mapping(amplitude value) noexcept {
-        return value == amplitude::positive ? '-' : '+';
+    /// Deferred measurement handle for the z-axis orientation.
+    [[nodiscard]] MeasurementHandle z_step() const noexcept {
+        return MeasurementHandle{this, 2U};
     }
 
-    /// Convert an amplitude to the rotational degree representation.
-    static constexpr int z_mapping(amplitude value) noexcept {
-        return value == amplitude::positive ? -45 : 45;
-    }
-
-    /// Convert an amplitude to the temporal imaginary rotation.
-    static constexpr std::complex<int> t_mapping(amplitude value) noexcept {
-        return value == amplitude::positive ? std::complex<int>{0, -45}
-                                            : std::complex<int>{0, 45};
-    }
-
-    /// Retrieve the binary representation of the x-axis amplitude.
-    [[nodiscard]] constexpr int x_step() const noexcept { return x_mapping(x); }
-
-    /// Retrieve the symbolic representation of the y-axis amplitude.
-    [[nodiscard]] constexpr char y_step() const noexcept { return y_mapping(y); }
-
-    /// Retrieve the rotational representation of the z-axis amplitude.
-    [[nodiscard]] constexpr int z_step() const noexcept { return z_mapping(z); }
-
-    /// Retrieve the temporal imaginary rotation of the t-axis amplitude.
-    [[nodiscard]] constexpr std::complex<int> t_step() const noexcept {
-        return t_mapping(t);
+    /// Deferred measurement handle for the t-axis orientation.
+    [[nodiscard]] MeasurementHandle t_step() const noexcept {
+        return MeasurementHandle{this, 3U};
     }
 
     /// Equality comparison for unordered containers and direct comparison.
-    [[nodiscard]] constexpr bool operator==(const qint& other) const noexcept {
-        return x == other.x && y == other.y && z == other.z && t == other.t;
+    [[nodiscard]] bool operator==(const qint& other) const noexcept {
+        if (this == &other)
+            return true;
+        if (backend_ == other.backend_ && qubits_ == other.qubits_)
+            return true;
+        for (std::size_t axis = 0; axis < qubits_.size(); ++axis) {
+            if (sample_axis(axis) != other.sample_axis(axis))
+                return false;
+        }
+        return true;
     }
+
+    /// Retrieve the backend used for qubit management.
+    [[nodiscard]] Backend& backend() const noexcept { return *backend_; }
+
+private:
+    struct LegacyGateSequenceBackend;
+
+    [[nodiscard]] static Backend& default_backend();
+
+    void prepare_axis(std::size_t axis_index, int legacy_value) {
+        const int previous_orientation = last_orientations_[axis_index];
+        const bool uses_sine_weighting =
+            legacy_value != 0 && legacy_value != -1 && legacy_value != 1;
+        const int resolved_orientation =
+            resolve_orientation(legacy_value, previous_orientation);
+        backend_->prepare_legacy(qubits_[axis_index], legacy_value, resolved_orientation,
+                                 uses_sine_weighting);
+        last_orientations_[axis_index] = resolved_orientation;
+        measurement_cache_[axis_index].reset();
+    }
+
+    [[nodiscard]] static int resolve_orientation(int legacy_value,
+                                                 int previous_orientation) noexcept {
+        if (legacy_value == 0)
+            return previous_orientation;
+        return legacy_value >= 1 ? 1 : -1;
+    }
+
+    [[nodiscard]] int sample_axis(std::size_t axis_index) const {
+        auto& cached = measurement_cache_[axis_index];
+        if (!cached.has_value())
+            cached = backend_->measure(qubits_[axis_index]);
+        return *cached;
+    }
+
+    Backend* backend_{};
+    std::array<QubitHandle, 4> qubits_{};
+    mutable std::array<std::optional<int>, 4> measurement_cache_{};
+    std::array<int, 4> last_orientations_{};
+
+    friend struct std::hash<qint>;
 };
 
-namespace qpp_qint_detail {
-[[nodiscard]] constexpr std::size_t encode(const qint& value) noexcept {
-    return (qint::binary_mapping(value.x)) |
-           (qint::binary_mapping(value.y) << 1U) |
-           (qint::binary_mapping(value.z) << 2U) |
-           (qint::binary_mapping(value.t) << 3U);
+struct qint::LegacyGateSequenceBackend final : public qint::Backend {
+    QubitHandle allocate(std::string axis_label) override {
+        const std::size_t id = next_id_++;
+        states_[id] = State{std::move(axis_label), -1, -1, false};
+        return QubitHandle{id};
+    }
+
+    void prepare_legacy(const QubitHandle& handle,
+                        int legacy_value,
+                        int resolved_orientation,
+                        bool used_sine_weighting) override {
+        auto& entry = states_[handle.id];
+        entry.legacy_value = legacy_value;
+        entry.orientation = resolved_orientation;
+        entry.used_sine_weighting = used_sine_weighting;
+    }
+
+    int measure(const QubitHandle& handle) override {
+        return states_.at(handle.id).orientation;
+    }
+
+private:
+    struct State {
+        std::string axis_label;
+        int legacy_value;
+        int orientation;
+        bool used_sine_weighting;
+    };
+
+    std::size_t next_id_{};
+    std::unordered_map<std::size_t, State> states_{};
+};
+
+inline qint::Backend& qint::default_backend() {
+    static LegacyGateSequenceBackend backend;
+    return backend;
 }
-} // namespace qpp_qint_detail
 
 namespace std {
 /// Hash specialisation enabling use of qint in unordered containers.
 template <> struct hash<::qint> {
-    [[nodiscard]] constexpr std::size_t operator()(const ::qint& value) const noexcept {
-        return ::qpp_qint_detail::encode(value);
+    [[nodiscard]] std::size_t operator()(const ::qint& value) const noexcept {
+        std::size_t seed = 0U;
+        const auto mix = [&seed](int measurement) noexcept {
+            const std::size_t contribution = std::hash<int>{}(measurement);
+            seed ^= contribution + 0x9e3779b97f4a7c15ULL + (seed << 6U) + (seed >> 2U);
+        };
+        mix(value.sample_axis(0U));
+        mix(value.sample_axis(1U));
+        mix(value.sample_axis(2U));
+        mix(value.sample_axis(3U));
+        return seed;
     }
 };
 } // namespace std
