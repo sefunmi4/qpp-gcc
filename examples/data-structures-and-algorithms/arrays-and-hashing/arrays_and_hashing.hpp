@@ -86,30 +86,96 @@ inline bool quantum_contains_duplicates(const std::qvector<qint>& list) {
 
 /// Check whether two strings are anagrams of one another.
 inline bool valid_anagram(std::string_view s, std::string_view t) {
+    //check that the strings have the same length
     if (s.size() != t.size())
         return false;
 
-    std::array<int, 256> counts{};
-    for (unsigned char ch : s)
-        ++counts[ch];
-    for (unsigned char ch : t) {
-        if (--counts[ch] < 0)
-            return false;
+    // assign a array of each character 
+    std::unordered_map<char, int> counts{};
+
+    //for each char count it's frequency of occurance 
+    for (unsigned char ch : s) {
+        if (counts.find(ch) != counts.end()) {
+            ++counts[ch]; 
+        } else {
+            counts[ch] = 0;
+        }
     }
+
+    //for each char subtract it's frequency of occurance 
+    for (unsigned char ch : t) {
+        if (counts.find(ch) == counts.end() || --counts[ch] < 0) {
+            return false;
+        }
+    }
+    return true;
+}
+
+
+/// Check whether two strings are anagrams of one another.
+inline bool quantum_valid_anagram(std::string_view s, std::string_view t) {
+    //check that the strings have the same length
+    if (s.size() != t.size())
+        return false;
+
+    // assign a array of each character 
+    std::entangled_map<char, qint> counts{};
+
+    //for each char count it's frequency of occurance 
+    for (unsigned char ch : s) {
+        if (counts.find(ch) != counts.end()) {
+            ++counts[ch]; 
+        } else {
+            counts[ch] = 0;
+        }
+    }
+
+    //for each char subtract it's frequency of occurance 
+    for (unsigned char ch : t) {
+        if (counts.find(ch) == counts.end() || --counts[ch] < 0) {
+            return false;
+        }
+    }
+
     return true;
 }
 
 /// Return the indices of two numbers that sum to the target.
 inline std::pair<int, int> two_sum(const std::vector<int>& nums, int target) {
+    // set up a hashmap with fixed size
     std::unordered_map<int, int> index_by_value;
     index_by_value.reserve(nums.size());
 
+    //for each element index in nums
     for (std::size_t i = 0; i < nums.size(); ++i) {
+        //find the complmentary value
         int complement = target - nums[i];
+        //check if the value exist in the hashmap and return if true
         auto it = index_by_value.find(complement);
         if (it != index_by_value.end())
             return {it->second, static_cast<int>(i)};
+        //add thee value to the hashmap if not present 
         index_by_value[nums[i]] = static_cast<int>(i);
+    }
+    return {-1, -1};
+}
+
+/// Return the indices of two numbers that sum to the target.
+inline std::pair<qint, qint> quantum_two_sum(const std::qvector<qint>& nums, int target) {
+    // set up a hashmap with fixed size
+    std::entangled_map<qint, qint> index_by_value;
+    index_by_value.reserve(nums.size());
+
+    //for each element index in nums
+    for (std::size_t i = 0; i < nums.size(); ++i) {
+        //find the complmentary value
+        int complement = target - nums[i];
+        //check if the value exist in the hashmap and return if true
+        auto it = index_by_value.find(complement);
+        if (it != index_by_value.end())
+            return {it->second, static_cast<qint>(i)};
+        //add thee value to the hashmap if not present 
+        index_by_value[nums[i]] = static_cast<qint>(i);
     }
     return {-1, -1};
 }
