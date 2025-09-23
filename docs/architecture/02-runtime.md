@@ -23,7 +23,12 @@ across different components.
 `qregister` and `cregister` provide explicit quantum and classical
 storage. A `qregister` wraps a `qclass` instance and exposes import and
 export helpers so that state can be saved or restored. `cregister` stores
-ordinary integer bits for hybrid algorithms.
+ordinary integer bits for hybrid algorithms. When higher level helpers
+such as `qint` allocate qubits they now rely on backend-provided
+measurement helpers (`measure_axis` / `measure_register`) to collapse the
+state. These helpers surface the probabilities and sampled counts returned
+by the backend so runtime code can react differently to
+non-deterministic results versus legacy deterministic fallbacks.
 
 ## Raw Gate Injection
 

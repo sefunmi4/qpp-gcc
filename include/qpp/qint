@@ -7,6 +7,7 @@
 #include <cstdint>
 #include <functional>
 #include <optional>
+#include <random>
 #include <string>
 #include <unordered_map>
 #include <utility>
@@ -33,7 +34,9 @@ struct qint {
     struct QubitHandle {
         std::size_t id{};
 
-        friend bool operator==(const QubitHandle&, const QubitHandle&) = default;
+        friend bool operator==(const QubitHandle& lhs, const QubitHandle& rhs) noexcept {
+            return lhs.id == rhs.id;
+        }
     };
 
     /// Abstract backend API used to allocate and prepare qubits.
@@ -48,6 +51,25 @@ struct qint {
         enum class ProbabilityInterpretation {
             AbsoluteAmplitude,
             SquaredAmplitude,
+        };
+
+        /// Statistics gathered from measuring a qubit axis.
+        struct MeasurementStatistics {
+            std::unordered_map<int, double> probabilities;
+            std::unordered_map<int, unsigned> counts;
+            std::optional<int> collapsed_value;
+
+            [[nodiscard]] bool has_counts() const noexcept {
+                return !counts.empty();
+            }
+
+            [[nodiscard]] bool has_probabilities() const noexcept {
+                return !probabilities.empty();
+            }
+
+            [[nodiscard]] bool has_collapsed_value() const noexcept {
+                return collapsed_value.has_value();
+            }
         };
 
         struct AmplitudePreparationRequest {
@@ -75,7 +97,8 @@ struct qint {
             const AmplitudePreparationSchedule& schedule) = 0;
 
         /// Perform a measurement and collapse the qubit.
-        [[nodiscard]] virtual int measure(const QubitHandle& handle) = 0;
+        [[nodiscard]] virtual MeasurementStatistics measure(const QubitHandle& handle,
+                                                            std::size_t shots) = 0;
     };
 
     /// Deferred measurement of a specific axis.
@@ -149,6 +172,28 @@ struct qint {
     /// Deferred measurement handle for the t-axis orientation.
     [[nodiscard]] MeasurementHandle t_step() const noexcept {
         return MeasurementHandle{this, 3U};
+    }
+
+    using MeasurementStatistics = Backend::MeasurementStatistics;
+
+    /// Measure a single axis and retrieve statistics from the backend.
+    [[nodiscard]] MeasurementStatistics measure_axis(std::size_t axis_index,
+                                                     std::size_t shots = 0) const {
+        auto stats = backend_->measure(qubits_[axis_index], shots);
+        stats = finalize_statistics(axis_index, shots, std::move(stats));
+        const int collapsed = interpret_statistics(axis_index, stats);
+        measurement_cache_[axis_index] = collapsed;
+        last_orientations_[axis_index] = collapsed;
+        return stats;
+    }
+
+    /// Measure all axes, collecting statistics for each register component.
+    [[nodiscard]] std::array<MeasurementStatistics, 4>
+    measure_register(std::size_t shots = 0) const {
+        std::array<MeasurementStatistics, 4> results{};
+        for (std::size_t axis = 0; axis < results.size(); ++axis)
+            results[axis] = measure_axis(axis, shots);
+        return results;
     }
 
     /// Equality comparison for unordered containers and direct comparison.
@@ -258,15 +303,55 @@ private:
 
     [[nodiscard]] int sample_axis(std::size_t axis_index) const {
         auto& cached = measurement_cache_[axis_index];
-        if (!cached.has_value())
-            cached = backend_->measure(qubits_[axis_index]);
+        if (!cached.has_value()) {
+            auto stats = backend_->measure(qubits_[axis_index], 0);
+            stats = finalize_statistics(axis_index, 0, std::move(stats));
+            const int collapsed = interpret_statistics(axis_index, stats);
+            cached = collapsed;
+            last_orientations_[axis_index] = collapsed;
+        }
         return *cached;
     }
 
     Backend* backend_{};
     std::array<QubitHandle, 4> qubits_{};
     mutable std::array<std::optional<int>, 4> measurement_cache_{};
-    std::array<int, 4> last_orientations_{};
+    mutable std::array<int, 4> last_orientations_{};
+
+    [[nodiscard]] MeasurementStatistics finalize_statistics(
+        std::size_t axis_index, std::size_t shots, MeasurementStatistics stats) const {
+        if (!stats.has_collapsed_value() && !stats.has_probabilities() && !stats.has_counts()) {
+            const int orientation = last_orientations_[axis_index];
+            stats.collapsed_value = orientation;
+            stats.probabilities[orientation] = 1.0;
+            if (shots > 0)
+                stats.counts[orientation] = static_cast<unsigned>(shots);
+        }
+        return stats;
+    }
+
+    [[nodiscard]] int interpret_statistics(std::size_t axis_index,
+                                           MeasurementStatistics& stats) const {
+        if (stats.collapsed_value)
+            return *stats.collapsed_value;
+        if (!stats.counts.empty()) {
+            auto it = std::max_element(stats.counts.begin(), stats.counts.end(),
+                                       [](const auto& lhs, const auto& rhs) {
+                                           return lhs.second < rhs.second;
+                                       });
+            stats.collapsed_value = it->first;
+            return it->first;
+        }
+        if (!stats.probabilities.empty()) {
+            auto it = std::max_element(stats.probabilities.begin(), stats.probabilities.end(),
+                                       [](const auto& lhs, const auto& rhs) {
+                                           return lhs.second < rhs.second;
+                                       });
+            stats.collapsed_value = it->first;
+            return it->first;
+        }
+        return last_orientations_[axis_index];
+    }
 
     friend struct std::hash<qint>;
 };
@@ -303,8 +388,55 @@ struct qint::LegacyGateSequenceBackend final : public qint::Backend {
         }
     }
 
-    int measure(const QubitHandle& handle) override {
-        return states_.at(handle.id).orientation;
+    MeasurementStatistics measure(const QubitHandle& handle,
+                                  std::size_t shots) override {
+        auto& entry = states_.at(handle.id);
+        MeasurementStatistics stats;
+
+        auto finalize_collapse = [&](int orientation) {
+            stats.collapsed_value = orientation;
+            stats.probabilities[orientation] = 1.0;
+            if (shots > 0)
+                stats.counts[orientation] = static_cast<unsigned>(shots);
+            entry.orientation = orientation;
+            entry.amplitude_prepared = false;
+            entry.used_sine_weighting = false;
+            entry.legacy_value = orientation;
+        };
+
+        if (entry.amplitude_prepared) {
+            double prob_one = std::clamp(entry.amplitude * entry.amplitude, 0.0, 1.0);
+            stats.probabilities[1] = prob_one;
+            stats.probabilities[-1] = std::clamp(1.0 - prob_one, 0.0, 1.0);
+
+            std::bernoulli_distribution draw(prob_one);
+            int collapsed = -1;
+
+            if (shots > 0) {
+                unsigned ones = 0;
+                for (std::size_t i = 0; i < shots; ++i) {
+                    bool sample = draw(rng_);
+                    collapsed = sample ? 1 : -1;
+                    if (sample)
+                        ++ones;
+                }
+                stats.counts[1] = ones;
+                stats.counts[-1] = static_cast<unsigned>(shots) - ones;
+                stats.collapsed_value = collapsed;
+            } else {
+                collapsed = draw(rng_) ? 1 : -1;
+                stats.collapsed_value = collapsed;
+            }
+
+            entry.orientation = *stats.collapsed_value;
+            entry.amplitude_prepared = false;
+            entry.used_sine_weighting = false;
+            entry.legacy_value = *stats.collapsed_value;
+        } else {
+            finalize_collapse(entry.orientation);
+        }
+
+        return stats;
     }
 
 private:
@@ -323,6 +455,7 @@ private:
 
     std::size_t next_id_{};
     std::unordered_map<std::size_t, State> states_{};
+    std::mt19937 rng_{5489u};
 };
 
 inline qint::Backend& qint::default_backend() {

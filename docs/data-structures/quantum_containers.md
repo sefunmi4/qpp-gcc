@@ -16,6 +16,10 @@ amplitudes, each instance now requests qubit allocations from a backend
 simulates the legacy behaviour—constructors accept integers and translate them
 into the ±1 orientations described below—but you can inject your own backend to
 route allocation and preparation into an actual simulator or piece of hardware.
+The lifecycle is explicit: constructing a `qint` allocates four qubits (`x`,
+`y`, `z`, and `t`), preparation functions load orientations or amplitude
+schedules, and measurement helpers collapse the state while returning the
+statistics required by downstream code.
 
 | Axis | Legacy negative (`-1`) meaning | Legacy positive (`+1`) meaning |
 | ---- | ------------------------------ | ------------------------------ |
@@ -31,12 +35,31 @@ that axis is reused; otherwise the sign of the value is taken as the target
 orientation while the raw magnitude is forwarded so that real backends can infer
 their own gate schedules.
 
-Convenience accessors—`x_step()`, `y_step()`, `z_step()`, and `t_step()`—now
-return `MeasurementHandle`s. Sampling a handle triggers a deferred measurement
-through the backend, with results cached inside the `qint` so repeated probes do
-not collapse the state multiple times. The `std::hash<qint>` specialisation uses
-these cached samples, ensuring hashed containers observe stable values even when
-the underlying qubits were allocated lazily.
+For amplitude-driven workflows call `prepare_normalized_amplitudes(frequency, …)`.
+The helper computes `sin(f · axis_index)` for each axis, normalises the samples,
+and asks the backend to stage a single submission. Depending on the supplied
+probability interpretation (`AbsoluteAmplitude` vs `SquaredAmplitude`) the
+weights are normalised before being translated into rotation angles. Measuring
+such a state yields the familiar `sin²(f · x)` distribution over the positive
+orientations.
+
+Convenience accessors—`x_step()`, `y_step()`, `z_step()`, and `t_step()`—return
+`MeasurementHandle`s that sample a single axis. Each probe requests statistics
+from the backend, collapses the qubit to the reported classical orientation, and
+caches the collapsed value so repeated probes do not trigger additional
+measurements. The richer helpers `measure_axis(axis, shots)` and
+`measure_register(shots)` return `MeasurementStatistics` objects containing
+probabilities, sampled counts (when `shots > 0`), and the collapsed classical
+value. Inspecting these structs lets higher-level code distinguish between true
+probabilistic results (for example, from `prepare_normalized_amplitudes`) and
+legacy deterministic orientations.
+
+Because measurements can now be non-deterministic, the surrounding containers
+react accordingly: once a qubit has been prepared with a sine-weighted schedule
+the first measurement collapses according to the backend RNG, but subsequent
+reads observe the cached classical value. The `std::hash<qint>` specialisation
+respects this behaviour by feeding the cached samples into its mixing routine so
+that hashed containers remain stable after the first observation.
 
 ## `qvector`: quantum-friendly dynamic arrays
 
@@ -100,6 +123,10 @@ return false;
 
 Try modifying the `context` epoch between runs or mixing `qint` constructions
 (some using the shared legacy backend, others pointing at a custom backend) to
-experiment with how the data structures react. Because these helpers are thin
-abstractions over standard containers, they are safe playgrounds for bridging
-classical algorithm drills and quantum intuition.
+experiment with how the data structures react. Pay particular attention to how
+probabilistic measurements propagate: sine-weighted preparations will report
+`sin²(f · x)` frequencies when you gather statistics with `measure_register`,
+while the legacy constructors continue to collapse immediately to their ±1
+orientations. Because these helpers are thin abstractions over standard
+containers, they are safe playgrounds for bridging classical algorithm drills
+and quantum intuition.
