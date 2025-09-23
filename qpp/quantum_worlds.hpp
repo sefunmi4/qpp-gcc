@@ -8,13 +8,16 @@
 #include <utility>
 #include <vector>
 
+#include "qpp/quantum/backend.hpp"
+
 namespace qpp {
 namespace quantum {
 
 /** \brief Enumeration describing which backend is targeted. */
 enum class BackendKind {
     CPU,
-    QPU_SIM
+    QPU_SIM,
+    OPENQASM_HTTP
 };
 
 /** \brief Convert a textual backend identifier into a BackendKind. */
@@ -95,6 +98,9 @@ std::vector<double> softmax(const std::vector<double> &values, double temperatur
  *  returned vector contains normalized amplitudes derived from the softmax
  *  distribution.
  */
+std::vector<double> sample_worlds(const std::vector<double> &weights, BackendKind backend,
+                                  std::size_t shots, BackendConfiguration config);
+
 std::vector<double> sample_worlds(const std::vector<double> &weights, BackendKind backend,
                                   std::size_t shots, unsigned seed = 0);
 

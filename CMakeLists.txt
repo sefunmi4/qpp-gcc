@@ -30,7 +30,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 enable_testing()
 
 # Core library containing the quantum worlds implementation
-add_library(worlds_lib qpp/quantum_worlds.cpp)
+add_library(worlds_lib qpp/quantum_worlds.cpp qpp/quantum/backend.cpp)
 target_include_directories(worlds_lib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
 # Lightweight testing framework used by unit tests
