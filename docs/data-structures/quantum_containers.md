@@ -17,9 +17,9 @@ The fields map to the following interpretations:
 | Axis | Field | Negative (`-1`) meaning | Positive (`+1`) meaning |
 | ---- | ----- | ----------------------- | ----------------------- |
 | X    | `x`   | logical `0` / northbound step | logical `1` / southbound step |
-| Y    | `y`   | symbol `+` / eastward step | symbol `-` / westward step |
-| Z    | `z`   | `+45°` rotation (back flip) | `-45°` rotation (front flip) |
-| T    | `t`   | `+45i` imaginary rotation (backward time) | `-45i` imaginary rotation (forward time) |
+| Y    | `y`   | symbol `-` / eastward step | symbol `+` /  westward step |
+| Z    | `z`   | `-45°` rotation (back flip) | `+45°` rotation (front flip) |
+| T    | `t`   | `-45i` imaginary rotation (backward time) | `+45i` imaginary rotation (forward time) |
 
 Constructors accept either explicit `amplitude` values or ordinary integers,
 which are normalised so that any non-positive number becomes `negative`.
