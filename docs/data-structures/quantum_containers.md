@@ -10,26 +10,33 @@ your own learning projects.
 
 ## `qint`: quantum orientation state
 
-`qint` represents a four-axis quantum orientation. Each axis stores a discrete
-`amplitude` that records polarity as either `negative` (−1) or `positive` (+1).
-The fields map to the following interpretations:
+`qint` represents a four-axis quantum orientation. Instead of embedding raw
+amplitudes, each instance now requests qubit allocations from a backend
+(`qint::Backend`) and stores the returned `QubitHandle`s. The default backend
+simulates the legacy behaviour—constructors accept integers and translate them
+into the ±1 orientations described below—but you can inject your own backend to
+route allocation and preparation into an actual simulator or piece of hardware.
 
-| Axis | Field | Negative (`-1`) meaning | Positive (`+1`) meaning |
-| ---- | ----- | ----------------------- | ----------------------- |
-| X    | `x`   | logical `0` / northbound step | logical `1` / southbound step |
-| Y    | `y`   | symbol `-` / eastward step | symbol `+` /  westward step |
-| Z    | `z`   | `-45°` rotation (back flip) | `+45°` rotation (front flip) |
-| T    | `t`   | `-45i` imaginary rotation (backward time) | `+45i` imaginary rotation (forward time) |
+| Axis | Legacy negative (`-1`) meaning | Legacy positive (`+1`) meaning |
+| ---- | ------------------------------ | ------------------------------ |
+| X    | logical `0` / northbound step  | logical `1` / southbound step  |
+| Y    | symbol `-` / eastward step     | symbol `+` / westward step     |
+| Z    | `-45°` rotation (back flip)    | `+45°` rotation (front flip)   |
+| T    | `-45i` imaginary rotation      | `+45i` imaginary rotation      |
 
-Constructors accept either explicit `amplitude` values or ordinary integers,
-which are normalised so that any non-positive number becomes `negative`.
-Convenience accessors—`x_step()`, `y_step()`, `z_step()`, and `t_step()`—expose
-axis-specific encodings when you need to visualise, log, or convert the state.
+When a constructor receives a legacy integer it builds a *preparation sequence*:
+if the value is ±1 the backend receives that orientation directly; if the value
+is `0` (meaning "no sine weighting" in the old API) the previous orientation for
+that axis is reused; otherwise the sign of the value is taken as the target
+orientation while the raw magnitude is forwarded so that real backends can infer
+their own gate schedules.
 
-`qint` also defines equality and provides a `std::hash` specialisation. This
-makes it a drop-in key for hashed containers such as `std::entangled_set` and
-means algorithms can rely on value semantics when deduplicating or comparing
-states.
+Convenience accessors—`x_step()`, `y_step()`, `z_step()`, and `t_step()`—now
+return `MeasurementHandle`s. Sampling a handle triggers a deferred measurement
+through the backend, with results cached inside the `qint` so repeated probes do
+not collapse the state multiple times. The `std::hash<qint>` specialisation uses
+these cached samples, ensuring hashed containers observe stable values even when
+the underlying qubits were allocated lazily.
 
 ## `qvector`: quantum-friendly dynamic arrays
 
@@ -92,7 +99,7 @@ return false;
   function.
 
 Try modifying the `context` epoch between runs or mixing `qint` constructions
-(from both integer and `amplitude` inputs) to experiment with how the data
-structures react. Because these helpers are thin abstractions over standard
-containers, they are safe playgrounds for bridging classical algorithm drills
-and quantum intuition.
+(some using the shared legacy backend, others pointing at a custom backend) to
+experiment with how the data structures react. Because these helpers are thin
+abstractions over standard containers, they are safe playgrounds for bridging
+classical algorithm drills and quantum intuition.
