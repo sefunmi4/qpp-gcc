@@ -139,6 +139,84 @@ int main(){
         out = self.compile_and_run(code, 'encodings')
         self.assertEqual(out, 'ok')
 
+    def test_qint_measurements_follow_sine_distribution(self):
+        code = r"""#include <array>
+#include <cmath>
+#include <iostream>
+#include "qpp/qint"
+int main(){
+    qint state;
+    double frequency = 0.73;
+    state.prepare_normalized_amplitudes(frequency);
+    auto stats = state.measure_register(4096);
+    std::array<double,4> expected{};
+    double total = 0.0;
+    for (std::size_t axis = 0; axis < expected.size(); ++axis) {
+        double sample = std::sin(frequency * static_cast<double>(axis));
+        expected[axis] = sample * sample;
+        total += expected[axis];
+    }
+    if (total == 0.0)
+        total = 1.0;
+    bool ok = true;
+    for (std::size_t axis = 0; axis < expected.size(); ++axis) {
+        double target = expected[axis] / total;
+        double observed_prob = 0.0;
+        auto pit = stats[axis].probabilities.find(1);
+        if (pit != stats[axis].probabilities.end())
+            observed_prob = pit->second;
+        double observed_freq = 0.0;
+        auto cit = stats[axis].counts.find(1);
+        if (cit != stats[axis].counts.end())
+            observed_freq = static_cast<double>(cit->second) / 4096.0;
+        if (!stats[axis].collapsed_value.has_value())
+            ok = false;
+        if (std::abs(observed_prob - target) > 0.05 ||
+            std::abs(observed_freq - target) > 0.08) {
+            ok = false;
+            break;
+        }
+    }
+    std::cout << (ok ? "ok" : "fail") << '\n';
+    return 0;
+}
+"""
+        out = self.compile_and_run(code, 'qint_sine_measure')
+        self.assertEqual(out, 'ok')
+
+    def test_qint_measurement_classical_fallback(self):
+        code = r"""#include <array>
+#include <cmath>
+#include <iostream>
+#include "qpp/qint"
+int main(){
+    qint state(-1, 1, -1, 1);
+    auto stats = state.measure_register();
+    const std::array<int,4> expected{{-1, 1, -1, 1}};
+    bool ok = true;
+    for (std::size_t axis = 0; axis < expected.size(); ++axis) {
+        if (!stats[axis].collapsed_value.has_value() ||
+            stats[axis].collapsed_value.value() != expected[axis]) {
+            ok = false;
+            break;
+        }
+        auto pit = stats[axis].probabilities.find(expected[axis]);
+        if (pit == stats[axis].probabilities.end() || std::abs(pit->second - 1.0) > 1e-9) {
+            ok = false;
+            break;
+        }
+        if (!stats[axis].counts.empty()) {
+            ok = false;
+            break;
+        }
+    }
+    std::cout << (ok ? "ok" : "fail") << '\n';
+    return 0;
+}
+"""
+        out = self.compile_and_run(code, 'qint_classical_measure')
+        self.assertEqual(out, 'ok')
+
     def test_period_finding(self):
         code = r"""#include <iostream>
 #include "qpp/sim/PeriodFinding.hpp"
