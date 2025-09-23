@@ -2,7 +2,8 @@
 
 This repository is a fork of GCC with experimental extensions for quantum programming.
 For background information on GCC itself see [README](README). The additions here focus on
-new language constructs and tooling to support quantum-aware C++ development.
+new language constructs and tooling to support quantum-aware C++ development. Full project
+documentation is available on the [Q++ website](https://sefunmi4.github.io/aoh-guild-house/projects/qpp/).
 
 ## Q++ Highlights
 
