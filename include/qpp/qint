@@ -1,6 +1,8 @@
 #pragma once
 
+#include <algorithm>
 #include <array>
+#include <cmath>
 #include <cstddef>
 #include <cstdint>
 #include <functional>
@@ -42,11 +44,35 @@ struct qint {
         /// Allocate a fresh qubit for the provided axis label.
         [[nodiscard]] virtual QubitHandle allocate(std::string axis_label) = 0;
 
+        /// Probability interpretation for amplitude preparation.
+        enum class ProbabilityInterpretation {
+            AbsoluteAmplitude,
+            SquaredAmplitude,
+        };
+
+        struct AmplitudePreparationRequest {
+            QubitHandle handle{};
+            double amplitude{};
+            double theta{};
+            bool apply_phase_flip{};
+            int orientation{};
+        };
+
+        struct AmplitudePreparationSchedule {
+            std::array<AmplitudePreparationRequest, 4> requests{};
+            ProbabilityInterpretation interpretation{
+                ProbabilityInterpretation::SquaredAmplitude};
+        };
+
         /// Apply the sequence of legacy operations that produced @p legacy_value.
         virtual void prepare_legacy(const QubitHandle& handle,
                                     int legacy_value,
                                     int resolved_orientation,
                                     bool used_sine_weighting) = 0;
+
+        /// Schedule amplitude-derived rotations as a single circuit submission.
+        virtual void prepare_amplitude_schedule(
+            const AmplitudePreparationSchedule& schedule) = 0;
 
         /// Perform a measurement and collapse the qubit.
         [[nodiscard]] virtual int measure(const QubitHandle& handle) = 0;
@@ -92,6 +118,19 @@ struct qint {
         prepare_axis(3U, t_axis);
     }
 
+    /// Prepare all axes using normalized sine-derived amplitudes.
+    void prepare_normalized_amplitudes(
+        double frequency,
+        Backend::ProbabilityInterpretation interpretation =
+            Backend::ProbabilityInterpretation::SquaredAmplitude) {
+        const auto schedule = build_amplitude_schedule(frequency, interpretation);
+        backend_->prepare_amplitude_schedule(schedule);
+        for (std::size_t axis = 0; axis < qubits_.size(); ++axis) {
+            last_orientations_[axis] = schedule.requests[axis].orientation;
+            measurement_cache_[axis].reset();
+        }
+    }
+
     /// Deferred measurement handle for the x-axis orientation.
     [[nodiscard]] MeasurementHandle x_step() const noexcept {
         return MeasurementHandle{this, 0U};
@@ -132,6 +171,71 @@ private:
     struct LegacyGateSequenceBackend;
 
     [[nodiscard]] static Backend& default_backend();
+
+    [[nodiscard]] Backend::AmplitudePreparationSchedule build_amplitude_schedule(
+        double frequency,
+        Backend::ProbabilityInterpretation interpretation) const {
+        Backend::AmplitudePreparationSchedule schedule{};
+        schedule.interpretation = interpretation;
+
+        std::array<double, 4> raw_targets{};
+        for (std::size_t axis = 0; axis < qubits_.size(); ++axis)
+            raw_targets[axis] = prepare_axis_amplitude(axis, frequency, *backend_);
+
+        const auto normalized = normalize_targets(raw_targets, interpretation);
+        for (std::size_t axis = 0; axis < normalized.size(); ++axis) {
+            const double amplitude = normalized[axis];
+            const double magnitude = std::clamp(std::abs(amplitude), 0.0, 1.0);
+            const double theta = 2.0 * std::asin(magnitude);
+            const bool needs_phase_flip = amplitude < 0.0;
+            const int orientation = amplitude > 0.0
+                                        ? 1
+                                        : amplitude < 0.0 ? -1 : last_orientations_[axis];
+
+            schedule.requests[axis] = Backend::AmplitudePreparationRequest{
+                qubits_[axis], amplitude, theta, needs_phase_flip, orientation};
+        }
+
+        return schedule;
+    }
+
+    [[nodiscard]] static double prepare_axis_amplitude(
+        std::size_t axis_index,
+        double frequency,
+        [[maybe_unused]] Backend& backend) {
+        const double raw = std::sin(frequency * static_cast<double>(axis_index));
+        if (raw > 1.0)
+            return 1.0;
+        if (raw < -1.0)
+            return -1.0;
+        return raw;
+    }
+
+    [[nodiscard]] std::array<double, 4> normalize_targets(
+        const std::array<double, 4>& raw,
+        Backend::ProbabilityInterpretation interpretation) const {
+        std::array<double, 4> normalized = raw;
+        double scale = 0.0;
+        switch (interpretation) {
+        case Backend::ProbabilityInterpretation::AbsoluteAmplitude:
+            for (double value : raw)
+                scale += std::abs(value);
+            break;
+        case Backend::ProbabilityInterpretation::SquaredAmplitude:
+            for (double value : raw)
+                scale += value * value;
+            scale = std::sqrt(scale);
+            break;
+        }
+
+        if (scale > 0.0) {
+            const double inv_scale = 1.0 / scale;
+            for (double& value : normalized)
+                value *= inv_scale;
+        }
+
+        return normalized;
+    }
 
     void prepare_axis(std::size_t axis_index, int legacy_value) {
         const int previous_orientation = last_orientations_[axis_index];
@@ -182,6 +286,21 @@ struct qint::LegacyGateSequenceBackend final : public qint::Backend {
         entry.legacy_value = legacy_value;
         entry.orientation = resolved_orientation;
         entry.used_sine_weighting = used_sine_weighting;
+        entry.amplitude_prepared = false;
+    }
+
+    void prepare_amplitude_schedule(
+        const Backend::AmplitudePreparationSchedule& schedule) override {
+        for (const auto& request : schedule.requests) {
+            auto& entry = states_[request.handle.id];
+            entry.amplitude_prepared = true;
+            entry.amplitude = request.amplitude;
+            entry.theta = request.theta;
+            entry.apply_phase_flip = request.apply_phase_flip;
+            entry.interpretation = schedule.interpretation;
+            if (request.orientation != 0)
+                entry.orientation = request.orientation;
+        }
     }
 
     int measure(const QubitHandle& handle) override {
@@ -194,6 +313,12 @@ private:
         int legacy_value;
         int orientation;
         bool used_sine_weighting;
+        bool amplitude_prepared{false};
+        double amplitude{0.0};
+        double theta{0.0};
+        bool apply_phase_flip{false};
+        Backend::ProbabilityInterpretation interpretation{
+            Backend::ProbabilityInterpretation::SquaredAmplitude};
     };
 
     std::size_t next_id_{};
