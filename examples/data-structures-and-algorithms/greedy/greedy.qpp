@@ -1,4 +1,49 @@
-namespace qpp::examples::greedy {
-    Maximum Subarray   	
-    Jump Game   
+#include <complex>
+#include <iomanip>
+#include <iostream>
+#include <string>
+#include <vector>
+
+#include "greedy.hpp"
+
+namespace {
+std::string basis_string(std::size_t index, std::size_t qubits) {
+    std::string bits(qubits, '0');
+    for (std::size_t q = 0; q < qubits; ++q)
+        bits[qubits - q - 1] = ((index >> q) & 1u) ? '1' : '0';
+    return bits;
 }
+
+void print_state(const qpp::qstruct& state, const std::string& label) {
+    const std::size_t qubits = state.qubits();
+    std::cout << label << " (" << qubits << " qubits) amplitudes:\n";
+    for (std::size_t i = 0; i < state.amplitude.size(); ++i) {
+        const double probability = std::norm(state.amplitude[i]);
+        if (probability < 1e-9)
+            continue;
+        std::cout << "  |" << basis_string(i, qubits) << "> -> "
+                  << state.amplitude[i] << " (p=" << probability << ")\n";
+    }
+}
+} // namespace
+
+int main() {
+    using namespace qpp::examples::greedy;
+
+    const std::vector<int> sequence{-2, 1, -3, 4, -1, 2, 1, -5, 4};
+    std::cout << "maximum_subarray([-2,1,-3,4,-1,2,1,-5,4]) -> "
+              << maximum_subarray(sequence) << "\n";
+
+    const std::vector<int> jumps_success{2, 3, 1, 1, 4};
+    const std::vector<int> jumps_failure{3, 2, 1, 0, 4};
+    std::cout << std::boolalpha;
+    std::cout << "can_jump([2,3,1,1,4]) -> " << can_jump(jumps_success) << "\n";
+    std::cout << "can_jump([3,2,1,0,4]) -> " << can_jump(jumps_failure) << "\n";
+
+    auto register_state = reachable_prefix_superposition(jumps_success);
+    print_state(register_state.data(),
+                "Reachable prefixes superposition for [2,3,1,1,4]");
+
+    return 0;
+}
+
