@@ -177,6 +177,19 @@ int main() {
     print_state(qubit_register.data(), "Analog qubit register");
     std::cout << '\n';
 
+    register_repository repository;
+    repository.store(qubit_register);
+    register_repository cloned_repository = repository; // copy constructor
+    register_repository moved_repository =
+        std::move(cloned_repository); // move constructor
+
+    std::cout << "register_repository stored qubits -> "
+              << moved_repository.retrieve().data().qubits() << '\n';
+    moved_repository.retrieve().apply_x(0);
+    std::cout << "register_repository after apply_x ->\n";
+    print_state(moved_repository.retrieve().data(), "  updated register");
+    std::cout << '\n';
+
     // Hybrid [b, q, b, q] register built from helper outputs
     const std::vector<int> hybrid_bits{1, 0};
     const std::vector<double> hybrid_angles{pi / 4.0, pi / 2.5};
