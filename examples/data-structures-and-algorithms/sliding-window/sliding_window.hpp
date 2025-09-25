@@ -26,6 +26,17 @@ inline int best_time_to_buy_and_sell_stock(const std::vector<int>& prices) {
     return best_profit;
 }
 
+/// Compute the maximum profit achievable with a single buy/sell transaction.
+inline qint quantum_best_time_to_buy_and_sell_stock(const std::qvector<qint>& prices) {
+    qint best_profit = 0;
+    qint cheapest_so_far = std::numeric_limits<qint>::max();
+    for (qint price : prices) {
+        cheapest_so_far = std::min(cheapest_so_far, price);
+        best_profit = std::max(best_profit, price - cheapest_so_far);
+    }
+    return best_profit;
+}
+
 /// Length of the longest substring without repeating characters.
 inline int longest_substring_without_repeating_characters(std::string_view s) {
     std::array<int, 256> last_seen;

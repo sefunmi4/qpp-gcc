@@ -266,19 +266,48 @@ inline std::vector<std::string> decode(const std::string& data) {
 
 /// Compute the product of all numbers except the one at each index.
 inline std::vector<int> product_except_self(const std::vector<int>& nums) {
+    // check size and handel corner
     const std::size_t n = nums.size();
     if (n == 0)
         return {};
-
+    //set array size and default element value
     std::vector<int> result(n, 1);
+    //set prefix and compound multiple through with buffer
     int prefix = 1;
+    for (std::size_t i = 0; i < n; ++i) {
+        //buffer 1 value set on first iteration
+        result[i] = prefix;
+        //compound and update prefix
+        prefix *= nums[i];
+    }
+    //set suffix and compound multiple through with buffer
+    int suffix = 1;
+    // for reverse decremation 
+    for (std::size_t i = n; i-1 > 0; --i) {
+        // add suffix buffered  to result 
+        result[i] *= suffix;
+        // compound and update suffix from nums 
+        suffix *= nums[i];
+    }
+    return result;
+}
+
+/// Compute the product of all numbers except the one at each index.
+inline std::qvector<qint> quantum_product_except_self(const std::qvector<qint>& nums) {
+    // check size and handle corner case
+    const std::size_t n = nums.size();
+    if (n == 0)
+        return {};
+    
+    std::qvector<qint> result(n, 1);
+    qint prefix = 1;
     for (std::size_t i = 0; i < n; ++i) {
         result[i] = prefix;
         prefix *= nums[i];
     }
 
-    int suffix = 1;
-    for (std::size_t i = n; i-- > 0;) {
+    qint suffix = 1;
+    for (std::size_t i = n; i-1 > 0; --i) {
         result[i] *= suffix;
         suffix *= nums[i];
     }
