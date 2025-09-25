@@ -4,6 +4,7 @@
 #include <array>
 #include <cmath>
 #include <complex>
+#include <memory>
 #include <numeric>
 #include <stdexcept>
 #include <string>
@@ -21,6 +22,64 @@
 
 
 namespace qpp::examples::arrays_and_hashing {
+// -----------------------------------------------------------------------------
+// Register storage helper obeying the rule of five
+// -----------------------------------------------------------------------------
+
+/// Small helper that owns a dynamically allocated qclass instance and exposes
+/// the full rule-of-five interface so that it can be copied or moved around by
+/// the examples in the accompanying .qpp file.
+class register_repository {
+public:
+    register_repository() = default;
+
+    explicit register_repository(const qpp::qclass& reg)
+        : reg_(std::make_unique<qpp::qclass>(reg)) {}
+
+    ~register_repository() = default;
+
+    register_repository(const register_repository& other)
+        : reg_(other.reg_ ? std::make_unique<qpp::qclass>(*other.reg_) : nullptr) {}
+
+    register_repository(register_repository&& other) noexcept = default;
+
+    register_repository& operator=(const register_repository& other) {
+        if (this != &other) {
+            reg_ =
+                other.reg_ ? std::make_unique<qpp::qclass>(*other.reg_) : nullptr;
+        }
+        return *this;
+    }
+
+    register_repository& operator=(register_repository&& other) noexcept =
+        default;
+
+    /// Replace the stored register with a deep copy of the provided one.
+    void store(const qpp::qclass& reg) {
+        reg_ = std::make_unique<qpp::qclass>(reg);
+    }
+
+    /// True when a register is currently stored.
+    [[nodiscard]] bool has_register() const noexcept { return static_cast<bool>(reg_); }
+
+    /// Access the stored register (const).
+    [[nodiscard]] const qpp::qclass& retrieve() const {
+        if (!reg_)
+            throw std::runtime_error("register_repository::retrieve: empty store");
+        return *reg_;
+    }
+
+    /// Access the stored register (mutable).
+    [[nodiscard]] qpp::qclass& retrieve() {
+        if (!reg_)
+            throw std::runtime_error("register_repository::retrieve: empty store");
+        return *reg_;
+    }
+
+private:
+    std::unique_ptr<qpp::qclass> reg_{};
+};
+
 // -----------------------------------------------------------------------------
 // Classical helper algorithms
 // -----------------------------------------------------------------------------
