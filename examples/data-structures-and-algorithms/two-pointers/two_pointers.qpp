@@ -1,0 +1,108 @@
+#include <iomanip>
+#include <iostream>
+#include <string>
+#include <vector>
+
+#include "two_pointers.hpp"
+
+namespace {
+std::string basis_string(std::size_t index, std::size_t qubits) {
+    std::string bits(qubits, '0');
+    for (std::size_t q = 0; q < qubits; ++q)
+        bits[qubits - q - 1] = ((index >> q) & 1u) ? '1' : '0';
+    return bits;
+}
+
+void print_state(const qpp::qstruct& state, const std::string& label) {
+    const std::size_t qubits = state.qubits();
+    std::cout << label << " (" << qubits << " qubits) amplitudes:\n";
+    for (std::size_t i = 0; i < state.amplitude.size(); ++i) {
+        const double probability = std::norm(state.amplitude[i]);
+        if (probability < 1e-9)
+            continue;
+        std::cout << "  |" << basis_string(i, qubits) << "> -> "
+                  << state.amplitude[i] << " (p=" << probability << ")\n";
+    }
+}
+
+int as_classical(const ::qint& value) {
+    auto stats = value.measure_register();
+    int result = 0;
+    for (std::size_t axis = 0; axis < stats.size(); ++axis) {
+        result <<= 1;
+        result |= stats[axis].collapsed_value.value_or(0) == 1 ? 1 : 0;
+    }
+    return result;
+}
+}
+
+int main() {
+    using namespace qpp::examples::two_pointers;
+
+    std::cout << std::boolalpha;
+
+    const std::string palindrome_sample = "A man, a plan, a canal: Panama";
+    const std::string non_palindrome_sample = "quantum register";
+    std::cout << "valid_palindrome('" << palindrome_sample << "') -> "
+              << valid_palindrome(palindrome_sample) << '\n';
+    std::cout << "valid_palindrome('" << non_palindrome_sample << "') -> "
+              << valid_palindrome(non_palindrome_sample) << '\n';
+
+    std::cout << "quantum_valid_palindrome('Able was I ere I saw Elba') -> "
+              << quantum_valid_palindrome("Able was I ere I saw Elba") << '\n';
+    std::cout << "palindrome_bias('madam') -> "
+              << palindrome_bias("madam").probability() << '\n';
+
+    const std::vector<int> nums{-1, 0, 1, 2, -1, -4};
+    const auto triplets = three_sum(nums);
+    std::cout << "three_sum([-1,0,1,2,-1,-4]) ->\n";
+    for (const auto& triplet : triplets) {
+        std::cout << "  [" << triplet[0] << ", " << triplet[1] << ", " << triplet[2]
+                  << "]\n";
+    }
+
+    const std::qvector<::qint> quantum_nums{
+        static_cast<::qint>(-1),
+        static_cast<::qint>(0),
+        static_cast<::qint>(1),
+        static_cast<::qint>(2),
+        static_cast<::qint>(-1),
+        static_cast<::qint>(-4),
+    };
+    const auto quantum_triplets = quantum_three_sum(quantum_nums);
+    std::cout << "quantum_three_sum([-1,0,1,2,-1,-4]) ->\n";
+    for (const auto& triplet : quantum_triplets) {
+        std::cout << "  [" << as_classical(triplet[0]) << ", "
+                  << as_classical(triplet[1]) << ", "
+                  << as_classical(triplet[2]) << "]\n";
+    }
+
+    const std::vector<int> heights{1, 8, 6, 2, 5, 4, 8, 3, 7};
+    std::cout << "container_with_most_water([1,8,6,2,5,4,8,3,7]) -> "
+              << container_with_most_water(heights) << '\n';
+
+    const std::qvector<::qint> quantum_heights{
+        static_cast<::qint>(1),
+        static_cast<::qint>(8),
+        static_cast<::qint>(6),
+        static_cast<::qint>(2),
+        static_cast<::qint>(5),
+        static_cast<::qint>(4),
+        static_cast<::qint>(8),
+        static_cast<::qint>(3),
+        static_cast<::qint>(7),
+    };
+    std::cout << "quantum_container_with_most_water([...]) -> "
+              << as_classical(quantum_container_with_most_water(quantum_heights))
+              << '\n';
+
+    const auto pointer_state = make_pointer_superposition(8);
+    print_state(pointer_state.data(), "Pointer superposition for length=8");
+
+    std::cout << std::setprecision(4)
+              << "pointer_hit_probability(8, 3) -> "
+              << pointer_hit_probability(8, 3).probability() << '\n';
+
+    return 0;
+}
+
