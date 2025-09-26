@@ -1,0 +1,104 @@
+#include <bitset>
+#include <iomanip>
+#include <iostream>
+#include <string>
+#include <vector>
+
+#include "bit_manipulation.hpp"
+
+namespace {
+std::string basis_string(std::size_t index, std::size_t qubits) {
+    std::string bits(qubits, '0');
+    for (std::size_t q = 0; q < qubits; ++q)
+        bits[qubits - q - 1] = ((index >> q) & 1u) ? '1' : '0';
+    return bits;
+}
+
+void print_state(const qpp::qstruct& state, const std::string& label) {
+    const std::size_t qubits = state.qubits();
+    std::cout << label << " (" << qubits << " qubits) amplitudes:\n";
+    for (std::size_t i = 0; i < state.amplitude.size(); ++i) {
+        const double probability = std::norm(state.amplitude[i]);
+        if (probability < 1e-9)
+            continue;
+        std::cout << "  |" << basis_string(i, qubits) << "> -> "
+                  << state.amplitude[i] << " (p=" << probability << ")\n";
+    }
+}
+
+int as_classical(const ::qint& value) {
+    auto stats = value.measure_register();
+    int result = 0;
+    for (std::size_t axis = 0; axis < stats.size(); ++axis) {
+        result <<= 1;
+        result |= stats[axis].collapsed_value.value_or(0) == 1 ? 1 : 0;
+    }
+    return result;
+}
+} // namespace
+
+int main() {
+    using namespace qpp::examples::bit_manipulation;
+
+    std::cout << std::boolalpha;
+
+    const std::uint32_t sample = 0b101101001u;
+    std::cout << "hamming_weight(0b101101001) -> " << hamming_weight(sample) << '\n';
+    std::cout << "reverse_bits(0b101101001) -> 0b"
+              << std::bitset<32>(reverse_bits(sample)) << '\n';
+
+    const auto counts = counting_bits(10);
+    std::cout << "counting_bits(10) -> [";
+    for (std::size_t i = 0; i < counts.size(); ++i) {
+        std::cout << counts[i];
+        if (i + 1 != counts.size())
+            std::cout << ", ";
+    }
+    std::cout << "]\n";
+
+    const std::vector<int> missing_input{3, 0, 1};
+    std::cout << "missing_number([3,0,1]) -> " << missing_number(missing_input) << '\n';
+    std::cout << "sum_two_integers(5, -3) -> " << sum_two_integers(5, -3) << '\n';
+
+    const std::qvector<::qint> quantum_values{
+        static_cast<::qint>(sample),
+    };
+    std::cout << "quantum_hamming_weight(0b101101001) -> "
+              << quantum_hamming_weight(quantum_values.front()) << '\n';
+    std::cout << "quantum_reverse_bits(0b101101001) -> 0b"
+              << std::bitset<32>(static_cast<std::uint32_t>(
+                     static_cast<int>(quantum_reverse_bits(quantum_values.front()))))
+              << '\n';
+
+    const auto quantum_counts = quantum_counting_bits(5);
+    std::cout << "quantum_counting_bits(5) -> [";
+    for (std::size_t i = 0; i < quantum_counts.size(); ++i) {
+        std::cout << as_classical(quantum_counts[i]);
+        if (i + 1 != quantum_counts.size())
+            std::cout << ", ";
+    }
+    std::cout << "]\n";
+
+    const std::qvector<::qint> quantum_missing{
+        static_cast<::qint>(3),
+        static_cast<::qint>(0),
+        static_cast<::qint>(1),
+    };
+    std::cout << "quantum_missing_number([3,0,1]) -> "
+              << as_classical(quantum_missing_number(quantum_missing)) << '\n';
+
+    std::cout << "quantum_sum_two_integers(5, -3) -> "
+              << as_classical(quantum_sum_two_integers(static_cast<::qint>(5),
+                                                       static_cast<::qint>(-3)))
+              << '\n';
+
+    auto superposition = make_uniform_bit_superposition(3);
+    print_state(superposition.data(), "Uniform bit superposition for 3 qubits");
+
+    std::cout << std::setprecision(3)
+              << "even_parity_probability(0b101101001) -> "
+              << even_parity_probability(sample).probability() << '\n';
+
+    return 0;
+}
+
