@@ -18,7 +18,21 @@ inline int maximum_subarray(const std::vector<int>& nums) {
     int best = nums.front();
     int current = nums.front();
     for (std::size_t i = 1; i < nums.size(); ++i) {
-        current = std::max(nums[i], current + nums[i]);
+        current = std::max(0, current + nums[i]);
+        best = std::max(best, current);
+    }
+    return best;
+}
+
+/// Return the maximum sum obtainable from a contiguous subarray.
+inline int quantum_maximum_subarray(const std::qvector<qint>& nums) {
+    if (nums.empty())
+        return 0;
+
+    int best = nums.front();
+    int current = nums.front();
+    for (std::qint i = 1; i < nums.size(); ++i) {
+        current = std::max(0, current + nums[i]);
         best = std::max(best, current);
     }
     return best;
