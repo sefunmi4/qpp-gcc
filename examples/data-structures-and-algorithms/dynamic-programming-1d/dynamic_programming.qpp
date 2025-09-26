@@ -1,0 +1,57 @@
+#include <iomanip>
+#include <iostream>
+#include <string>
+#include <vector>
+
+#include "dynamic_programming.hpp"
+
+int main() {
+    using namespace qpp::examples::dynamic_programming_1d;
+
+    std::cout << "Dynamic Programming (1D) demonstrations\n";
+    std::cout << "---------------------------------------\n";
+
+    std::cout << "climb_stairs(5) -> " << climb_stairs(5) << '\n';
+
+    const std::vector<int> robber_input{2, 7, 9, 3, 1};
+    std::cout << "house_robber([2,7,9,3,1]) -> " << house_robber(robber_input)
+              << '\n';
+    const std::vector<int> robber_circle{1, 2, 3, 1};
+    std::cout << "house_robber_ii([1,2,3,1]) -> "
+              << house_robber_ii(robber_circle) << '\n';
+
+    const std::string palindrome_input = "babad";
+    std::cout << "longest_palindromic_substring('babad') -> '"
+              << longest_palindromic_substring(palindrome_input) << "'\n";
+    std::cout << "palindromic_substring_count('aaa') -> "
+              << palindromic_substring_count("aaa") << '\n';
+
+    std::cout << "decode_ways('226') -> " << decode_ways("226") << '\n';
+
+    const std::vector<int> coins{1, 2, 5};
+    std::cout << "coin_change([1,2,5], 11) -> " << coin_change(coins, 11)
+              << '\n';
+
+    const std::vector<int> product_input{2, 3, -2, 4};
+    std::cout << "maximum_product_subarray([2,3,-2,4]) -> "
+              << maximum_product_subarray(product_input) << '\n';
+
+    const std::vector<std::string> dictionary{"leet", "code"};
+    std::cout << std::boolalpha;
+    std::cout << "word_break('leetcode', ['leet','code']) -> "
+              << word_break("leetcode", dictionary) << '\n';
+    const qpp::pbool quantum_break =
+        quantum_word_break("leetcode", dictionary);
+    std::cout << std::noboolalpha;
+    std::cout << std::fixed << std::setprecision(2);
+    std::cout << "quantum_word_break probability -> "
+              << quantum_break.probability() << '\n';
+    std::cout.unsetf(std::ios::floatfield);
+
+    const std::vector<int> lis_input{10, 9, 2, 5, 3, 7, 101, 18};
+    std::cout << "longest_increasing_subsequence([10,9,2,5,3,7,101,18]) -> "
+              << longest_increasing_subsequence(lis_input) << '\n';
+
+    return 0;
+}
+
