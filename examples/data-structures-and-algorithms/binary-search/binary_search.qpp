@@ -1,0 +1,58 @@
+#include <complex>
+#include <iomanip>
+#include <iostream>
+#include <string>
+#include <vector>
+
+#include "binary_search.hpp"
+
+namespace {
+std::string basis_string(std::size_t index, std::size_t qubits) {
+    std::string bits(qubits, '0');
+    for (std::size_t q = 0; q < qubits; ++q)
+        bits[qubits - q - 1] = ((index >> q) & 1u) ? '1' : '0';
+    return bits;
+}
+
+void print_state(const qpp::qstruct& state, const std::string& label) {
+    const std::size_t qubits = state.qubits();
+    std::cout << label << " (" << qubits << " qubits) amplitudes:\n";
+    for (std::size_t i = 0; i < state.amplitude.size(); ++i) {
+        const double probability = std::norm(state.amplitude[i]);
+        if (probability < 1e-9)
+            continue;
+        std::cout << "  |" << basis_string(i, qubits) << "> -> "
+                  << state.amplitude[i] << " (p=" << probability << ")\n";
+    }
+}
+} // namespace
+
+int main() {
+    using namespace qpp::examples::binary_search;
+
+    const std::vector<int> rotated{4, 5, 6, 7, 0, 1, 2};
+    std::cout << "find_min_in_rotated_sorted_array([4,5,6,7,0,1,2]) -> "
+              << find_min_in_rotated_sorted_array(rotated) << "\n";
+
+    std::cout << "search_in_rotated_sorted_array([4,5,6,7,0,1,2], 0) -> "
+              << search_in_rotated_sorted_array(rotated, 0) << "\n";
+    std::cout << "search_in_rotated_sorted_array([4,5,6,7,0,1,2], 3) -> "
+              << search_in_rotated_sorted_array(rotated, 3) << "\n";
+
+    const std::qvector<::qint> quantum_rotated{4, 5, 6, 7, 0, 1, 2};
+    std::cout << "quantum_find_min_in_rotated_sorted_array([4,5,6,7,0,1,2]) -> "
+              << quantum_find_min_in_rotated_sorted_array(quantum_rotated) << "\n";
+    std::cout << "quantum_search_in_rotated_sorted_array([4,5,6,7,0,1,2], 6) -> "
+              << quantum_search_in_rotated_sorted_array(quantum_rotated, 6) << "\n";
+
+    const qpp::pbool probability = pivot_hit_probability(rotated.size(), 4);
+    std::cout << std::fixed << std::setprecision(3)
+              << "pivot_hit_probability(length=7, pivot=4) -> "
+              << probability.probability() << "\n";
+
+    auto pivot_state = make_pivot_superposition(rotated.size());
+    print_state(pivot_state.data(), "Pivot superposition for length=7");
+
+    return 0;
+}
+

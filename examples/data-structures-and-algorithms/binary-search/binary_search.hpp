@@ -1,0 +1,179 @@
+#pragma once
+
+#include <algorithm>
+#include <cmath>
+#include <complex>
+#include <cstddef>
+#include <vector>
+
+#include "qpp/pbool.h"
+#include "qpp/qint"
+#include "qpp/qstruct.hpp"
+#include "qpp/qvector"
+
+namespace qpp::examples::binary_search {
+
+/// Locate the minimum element of a rotated sorted array in logarithmic time.
+inline int find_min_in_rotated_sorted_array(const std::vector<int>& nums) {
+    if (nums.empty())
+        return 0;
+
+    int left = 0;
+    int right = static_cast<int>(nums.size()) - 1;
+    int best = nums.front();
+
+    while (left <= right) {
+        if (nums[static_cast<std::size_t>(left)] <=
+            nums[static_cast<std::size_t>(right)]) {
+            best = std::min(best, nums[static_cast<std::size_t>(left)]);
+            break;
+        }
+
+        const int mid = left + (right - left) / 2;
+        const int mid_value = nums[static_cast<std::size_t>(mid)];
+        best = std::min(best, mid_value);
+
+        if (mid_value >= nums[static_cast<std::size_t>(left)])
+            left = mid + 1;
+        else
+            right = mid;
+    }
+
+    return best;
+}
+
+/// Search for a target element inside a rotated sorted array.
+inline int search_in_rotated_sorted_array(const std::vector<int>& nums, int target) {
+    if (nums.empty())
+        return -1;
+
+    int left = 0;
+    int right = static_cast<int>(nums.size()) - 1;
+
+    while (left <= right) {
+        const int mid = left + (right - left) / 2;
+        const int mid_value = nums[static_cast<std::size_t>(mid)];
+
+        if (mid_value == target)
+            return mid;
+
+        if (nums[static_cast<std::size_t>(left)] <= mid_value) {
+            if (target >= nums[static_cast<std::size_t>(left)] && target < mid_value)
+                right = mid - 1;
+            else
+                left = mid + 1;
+        } else {
+            if (target > mid_value &&
+                target <= nums[static_cast<std::size_t>(right)])
+                left = mid + 1;
+            else
+                right = mid - 1;
+        }
+    }
+
+    return -1;
+}
+
+/// Locate the minimum element of a rotated sorted array of qints.
+inline int quantum_find_min_in_rotated_sorted_array(const std::qvector<qint>& nums) {
+    if (nums.empty())
+        return 0;
+
+    int left = 0;
+    int right = static_cast<int>(nums.size()) - 1;
+    int best = nums.front();
+
+    while (left <= right) {
+        if (nums[static_cast<std::size_t>(left)] <=
+            nums[static_cast<std::size_t>(right)]) {
+            best = std::min(best, static_cast<int>(nums[static_cast<std::size_t>(left)]));
+            break;
+        }
+
+        const int mid = left + (right - left) / 2;
+        const int mid_value = nums[static_cast<std::size_t>(mid)];
+        best = std::min(best, mid_value);
+
+        if (mid_value >= nums[static_cast<std::size_t>(left)])
+            left = mid + 1;
+        else
+            right = mid;
+    }
+
+    return best;
+}
+
+/// Search for a target element in a rotated sorted array of qints.
+inline int quantum_search_in_rotated_sorted_array(const std::qvector<qint>& nums,
+                                                  int target) {
+    if (nums.empty())
+        return -1;
+
+    int left = 0;
+    int right = static_cast<int>(nums.size()) - 1;
+
+    while (left <= right) {
+        const int mid = left + (right - left) / 2;
+        const int mid_value = nums[static_cast<std::size_t>(mid)];
+
+        if (mid_value == target)
+            return mid;
+
+        if (nums[static_cast<std::size_t>(left)] <= mid_value) {
+            if (target >= nums[static_cast<std::size_t>(left)] && target < mid_value)
+                right = mid - 1;
+            else
+                left = mid + 1;
+        } else {
+            if (target > mid_value &&
+                target <= nums[static_cast<std::size_t>(right)])
+                left = mid + 1;
+            else
+                right = mid - 1;
+        }
+    }
+
+    return -1;
+}
+
+/// Probability of sampling the pivot when measuring a uniform rotation index state.
+inline qpp::pbool pivot_hit_probability(std::size_t length, std::size_t pivot_index) {
+    if (length == 0 || pivot_index >= length)
+        return qpp::pbool{0.0};
+
+    const double probability = 1.0 / static_cast<double>(length);
+    return qpp::pbool{probability};
+}
+
+/// Build a register encoding a uniform superposition over rotation pivot indices.
+inline qpp::qclass make_pivot_superposition(std::size_t length) {
+    std::size_t qubits = 0;
+    while ((std::size_t{1} << qubits) < std::max<std::size_t>(length, 1))
+        ++qubits;
+
+    qpp::qclass reg(qubits);
+    if (qubits == 0)
+        return reg;
+
+    for (std::size_t q = 0; q < qubits; ++q)
+        reg.apply_h(q);
+
+    auto& amplitude = reg.data().amplitude;
+    for (std::size_t basis = length; basis < amplitude.size(); ++basis)
+        amplitude[basis] = {0.0, 0.0};
+
+    double norm = 0.0;
+    for (const auto& amp : amplitude)
+        norm += std::norm(amp);
+
+    if (norm > 0.0) {
+        const double inv_norm = 1.0 / std::sqrt(norm);
+        for (auto& amp : amplitude)
+            amp *= inv_norm;
+    }
+
+    return reg;
+}
+
+} // namespace qpp::examples::binary_search
+
