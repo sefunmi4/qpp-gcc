@@ -3,7 +3,7 @@
 #include <string>
 #include <vector>
 
-#include "dynamic_programming.hpp"
+#include "dynamic_programming_1d.hpp"
 
 int main() {
     using namespace qpp::examples::dynamic_programming_1d;
