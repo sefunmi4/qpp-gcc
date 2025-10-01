@@ -22,6 +22,28 @@
 
 
 namespace qpp::examples::arrays_and_hashing {
+namespace detail {
+
+inline std::array<int, 4> sample_axes(const qint& value) {
+    return {value.sample_axis(0U), value.sample_axis(1U), value.sample_axis(2U),
+            value.sample_axis(3U)};
+}
+
+inline int collapse_axes_to_scalar(const std::array<int, 4>& axes) {
+    int scalar = 0;
+    int scale = 1;
+    for (int measurement : axes) {
+        scalar += measurement * scale;
+        scale *= 3;
+    }
+    return scalar;
+}
+
+inline int collapse_to_scalar(const qint& value) {
+    return collapse_axes_to_scalar(sample_axes(value));
+}
+
+} // namespace detail
 // -----------------------------------------------------------------------------
 // Register storage helper obeying the rule of five
 // -----------------------------------------------------------------------------
@@ -127,19 +149,13 @@ inline bool contains_duplicates(const std::vector<int>& list) {
 
 /// Return true when the input contains any duplicate values.
 inline bool quantum_contains_duplicates(const std::qvector<qint>& list) {
-    // assign set of visited items
-    std::entangled_set<qint> visited;
-    // set the size 
+    std::entangled_set<int> visited;
     visited.reserve(list.size());
-    // for each item in vector list
     for (const auto& item : list) {
-        // check if item is in visited set
-        if (visited.find(item) != visited.end())
+        const int signature = detail::collapse_to_scalar(item);
+        if (!visited.insert(signature).second)
             return true;
-        // add item to visited set
-        visited.insert(item);
     }
-    //return false if no duplicates are found
     return false;
 }
 
@@ -173,30 +189,22 @@ inline bool valid_anagram(std::string_view s, std::string_view t) {
 
 /// Check whether two strings are anagrams of one another.
 inline bool quantum_valid_anagram(std::string_view s, std::string_view t) {
-    //check that the strings have the same length
     if (s.size() != t.size())
         return false;
 
-    // assign a array of each character 
-    std::entangled_map<char, qint> counts{};
+    std::entangled_map<unsigned char, int> counts;
+    counts.reserve(s.size());
+    for (unsigned char ch : s)
+        ++counts[ch];
 
-    //for each char count it's frequency of occurance 
-    for (unsigned char ch : s) {
-        if (counts.find(ch) != counts.end()) {
-            ++counts[ch]; 
-        } else {
-            counts[ch] = 0;
-        }
-    }
-
-    //for each char subtract it's frequency of occurance 
     for (unsigned char ch : t) {
-        if (counts.find(ch) == counts.end() || --counts[ch] < 0) {
+        auto it = counts.find(ch);
+        if (it == counts.end())
             return false;
-        }
+        if (--it->second == 0)
+            counts.erase(it);
     }
-
-    return true;
+    return counts.empty();
 }
 
 /// Return the indices of two numbers that sum to the target.
@@ -219,22 +227,19 @@ inline std::pair<int, int> two_sum(const std::vector<int>& nums, int target) {
     return {-1, -1};
 }
 
-/// Return the indices of two numbers that sum to the target.
-inline std::pair<qint, qint> quantum_two_sum(const std::qvector<qint>& nums, int target) {
-    // set up a hashmap with fixed size
-    std::entangled_map<qint, qint> index_by_value;
+/// Return the indices of two quantum values whose collapsed scalars sum to the target.
+inline std::pair<int, int> quantum_two_sum(const std::qvector<qint>& nums,
+                                           int target) {
+    std::entangled_map<int, int> index_by_value;
     index_by_value.reserve(nums.size());
 
-    //for each element index in nums
     for (std::size_t i = 0; i < nums.size(); ++i) {
-        //find the complmentary value
-        int complement = target - nums[i];
-        //check if the value exist in the hashmap and return if true
+        const int value = detail::collapse_to_scalar(nums[i]);
+        const int complement = target - value;
         auto it = index_by_value.find(complement);
         if (it != index_by_value.end())
-            return {it->second, static_cast<qint>(i)};
-        //add thee value to the hashmap if not present 
-        index_by_value[nums[i]] = static_cast<qint>(i);
+            return {it->second, static_cast<int>(i)};
+        index_by_value[value] = static_cast<int>(i);
     }
     return {-1, -1};
 }
@@ -341,34 +346,36 @@ inline std::vector<int> product_except_self(const std::vector<int>& nums) {
     }
     //set suffix and compound multiple through with buffer
     int suffix = 1;
-    // for reverse decremation 
-    for (std::size_t i = n; i-1 > 0; --i) {
-        // add suffix buffered  to result 
+    for (std::size_t i = n; i-- > 0;) {
         result[i] *= suffix;
-        // compound and update suffix from nums 
         suffix *= nums[i];
     }
     return result;
 }
 
-/// Compute the product of all numbers except the one at each index.
-inline std::qvector<qint> quantum_product_except_self(const std::qvector<qint>& nums) {
-    // check size and handle corner case
+/// Collapse each quantum value to a scalar and compute the product excluding each index.
+inline std::qvector<int>
+quantum_product_except_self(const std::qvector<qint>& nums) {
     const std::size_t n = nums.size();
     if (n == 0)
         return {};
-    
-    std::qvector<qint> result(n, 1);
-    qint prefix = 1;
+
+    std::qvector<int> classical_values;
+    classical_values.reserve(n);
+    for (const auto& value : nums)
+        classical_values.push_back(detail::collapse_to_scalar(value));
+
+    std::qvector<int> result(n, 1);
+    int prefix = 1;
     for (std::size_t i = 0; i < n; ++i) {
         result[i] = prefix;
-        prefix *= nums[i];
+        prefix *= classical_values[i];
     }
 
-    qint suffix = 1;
-    for (std::size_t i = n; i-1 > 0; --i) {
+    int suffix = 1;
+    for (std::size_t i = n; i-- > 0;) {
         result[i] *= suffix;
-        suffix *= nums[i];
+        suffix *= classical_values[i];
     }
     return result;
 }
