@@ -9,6 +9,7 @@
 #include <string_view>
 #include <tuple>
 #include <type_traits>
+#include <unordered_map>
 #include <unordered_set>
 #include <utility>
 
@@ -319,6 +320,13 @@ template <typename Key,
           typename Allocator = std::allocator<Key>>
 using set = std::unordered_set<Key, Hash, KeyEqual, Allocator>;
 
+template <typename Key,
+          typename T,
+          typename Hash = hasher<Key>,
+          typename KeyEqual = transparent_equal,
+          typename Allocator = std::allocator<std::pair<const Key, T>>>
+using map = std::unordered_map<Key, T, Hash, KeyEqual, Allocator>;
+
 } // namespace qpp::entangled
 
 namespace std {
@@ -328,6 +336,13 @@ template <typename Key,
           typename KeyEqual = ::qpp::entangled::transparent_equal,
           typename Allocator = std::allocator<Key>>
 using entangled_set = ::qpp::entangled::set<Key, Hash, KeyEqual, Allocator>;
+
+template <typename Key,
+          typename T,
+          typename Hash = ::qpp::entangled::hasher<Key>,
+          typename KeyEqual = ::qpp::entangled::transparent_equal,
+          typename Allocator = std::allocator<std::pair<const Key, T>>>
+using entangled_map = ::qpp::entangled::map<Key, T, Hash, KeyEqual, Allocator>;
 
 } // namespace std
 
