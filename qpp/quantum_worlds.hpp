@@ -47,15 +47,19 @@ class FactorRegistry {
     /** \brief Access the internal mapping for inspection. */
     const std::unordered_map<std::string, value_type> &mapping() const noexcept;
 
+    /** \brief Access the ordered array of generated primes. */
+    const std::vector<value_type> &primes() const noexcept;
+
     /** \brief Number of registered factors. */
     std::size_t size() const noexcept;
 
   private:
-    static bool is_prime(value_type candidate);
-    static value_type next_prime(value_type candidate);
+    bool is_prime(value_type candidate) const;
+    value_type next_prime();
 
     value_type next_candidate_;
     std::unordered_map<std::string, value_type> mapping_;
+    std::vector<value_type> primes_;
 };
 
 /** \brief Encodes a world signature with weighted named factors. */

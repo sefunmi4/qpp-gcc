@@ -40,21 +40,21 @@ BackendKind parse_backend(std::string_view name) {
     throw std::invalid_argument("unknown backend: " + std::string{name});
 }
 
-FactorRegistry::FactorRegistry() : next_candidate_(2), mapping_() {}
+FactorRegistry::FactorRegistry() : next_candidate_(2), mapping_(), primes_() {}
 
 void FactorRegistry::clear() {
     mapping_.clear();
+    primes_.clear();
     next_candidate_ = 2;
 }
 
 FactorRegistry::value_type FactorRegistry::register_factor(const std::string &name) {
-    auto it = mapping_.find(name);
-    if (it != mapping_.end())
+    auto [it, inserted] = mapping_.try_emplace(name, value_type{});
+    if (!inserted)
         return it->second;
 
-    value_type prime = next_prime(next_candidate_);
-    mapping_.emplace(name, prime);
-    next_candidate_ = prime + 1;
+    value_type prime = next_prime();
+    it->second = prime;
     return prime;
 }
 
@@ -71,29 +71,46 @@ FactorRegistry::mapping() const noexcept {
     return mapping_;
 }
 
+const std::vector<FactorRegistry::value_type> &FactorRegistry::primes() const noexcept {
+    return primes_;
+}
+
 std::size_t FactorRegistry::size() const noexcept { return mapping_.size(); }
 
-bool FactorRegistry::is_prime(value_type candidate) {
+bool FactorRegistry::is_prime(value_type candidate) const {
     if (candidate < 2)
         return false;
     if (candidate == 2)
         return true;
     if (candidate % 2 == 0)
         return false;
-    for (value_type i = 3; i * i <= candidate; i += 2) {
-        if (candidate % i == 0)
+
+    const auto limit = static_cast<value_type>(
+        std::sqrt(static_cast<long double>(candidate)));
+    for (value_type prime : primes_) {
+        if (prime < 2)
+            continue;
+        if (prime > limit)
+            break;
+        if (candidate % prime == 0)
             return false;
     }
+
     return true;
 }
 
-FactorRegistry::value_type FactorRegistry::next_prime(value_type candidate) {
+FactorRegistry::value_type FactorRegistry::next_prime() {
+    value_type candidate = next_candidate_;
     if (candidate <= 2)
-        return 2;
-    if (candidate % 2 == 0)
+        candidate = 2;
+    if (candidate % 2 == 0 && candidate != 2)
         ++candidate;
+
     while (!is_prime(candidate))
         candidate += 2;
+
+    primes_.push_back(candidate);
+    next_candidate_ = candidate + 1;
     return candidate;
 }
 
@@ -126,10 +143,11 @@ void WorldSignature::sort() {
 
 std::vector<FactorRegistry::value_type>
 assign_primes(FactorRegistry &registry, const WorldSignature &signature) {
-    std::vector<FactorRegistry::value_type> primes;
-    primes.reserve(signature.factors.size());
-    for (const auto &entry : signature.factors)
-        primes.push_back(registry.register_factor(entry.first));
+    std::vector<FactorRegistry::value_type> primes(signature.factors.size());
+    std::transform(signature.factors.begin(), signature.factors.end(), primes.begin(),
+                   [&registry](const WorldSignature::Entry &entry) {
+                       return registry.register_factor(entry.first);
+                   });
     return primes;
 }
 
@@ -138,8 +156,10 @@ std::vector<double> generate_spectrum(const std::vector<FactorRegistry::value_ty
     if (primes.size() != signature.factors.size())
         throw std::invalid_argument("prime list size mismatch with signature");
     std::vector<double> spectrum(primes.size());
-    for (std::size_t i = 0; i < primes.size(); ++i)
-        spectrum[i] = static_cast<double>(primes[i]) * signature.factors[i].second;
+    std::transform(primes.begin(), primes.end(), signature.factors.begin(), spectrum.begin(),
+                   [](FactorRegistry::value_type prime, const WorldSignature::Entry &entry) {
+                       return static_cast<double>(prime) * entry.second;
+                   });
     return spectrum;
 }
 
