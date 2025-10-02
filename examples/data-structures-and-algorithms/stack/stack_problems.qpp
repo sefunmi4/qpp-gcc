@@ -1,0 +1,38 @@
+#include <iomanip>
+#include <iostream>
+#include <string>
+
+#include "stack_problems.hpp"
+
+int main() {
+    using namespace qpp::examples::stack;
+
+    const std::string valid = "({[]})";
+    const std::string invalid = "([)]";
+
+    std::cout << std::boolalpha;
+    std::cout << "is_valid_parentheses(\"" << valid << "\") -> "
+              << is_valid_parentheses(valid) << "\n";
+    std::cout << "is_valid_parentheses(\"" << invalid << "\") -> "
+              << is_valid_parentheses(invalid) << "\n";
+
+    const auto encoded_valid = encode_parentheses_sequence(valid);
+    const auto encoded_invalid = encode_parentheses_sequence(invalid);
+
+    std::cout << "quantum_is_valid_parentheses(\"" << valid << "\") -> "
+              << quantum_is_valid_parentheses(encoded_valid) << "\n";
+    std::cout << "quantum_is_valid_parentheses(\"" << invalid << "\") -> "
+              << quantum_is_valid_parentheses(encoded_invalid) << "\n";
+
+    const auto confidence_valid = parentheses_confidence(valid);
+    const auto confidence_invalid = parentheses_confidence(invalid);
+
+    std::cout << std::setprecision(1) << std::fixed;
+    std::cout << "parentheses_confidence(\"" << valid << "\") -> "
+              << confidence_valid.probability() << "\n";
+    std::cout << "parentheses_confidence(\"" << invalid << "\") -> "
+              << confidence_invalid.probability() << "\n";
+
+    return 0;
+}
+
