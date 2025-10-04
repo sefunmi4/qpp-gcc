@@ -1,0 +1,60 @@
+#include <iostream>
+#include <vector>
+
+#include "linked_list_problems.hpp"
+
+namespace {
+
+using qpp::examples::linked_list::describe_list;
+using qpp::examples::linked_list::has_cycle;
+using qpp::examples::linked_list::make_list;
+using qpp::examples::linked_list::merge_k_sorted_lists;
+using qpp::examples::linked_list::merge_two_sorted_lists;
+using qpp::examples::linked_list::remove_nth_from_end;
+using qpp::examples::linked_list::reorder_list;
+using qpp::examples::linked_list::reverse_list;
+
+} // namespace
+
+int main() {
+    auto reverse_example = make_list({1, 2, 3, 4, 5});
+    std::cout << "Reverse Linked List\n  before: "
+              << describe_list(reverse_example) << '\n';
+    reverse_example = reverse_list(reverse_example);
+    std::cout << "  after:  " << describe_list(reverse_example) << "\n\n";
+
+    auto list_one = make_list({1, 3, 5});
+    auto list_two = make_list({2, 4, 6});
+    const auto merged_two = merge_two_sorted_lists(list_one, list_two);
+    std::cout << "Merge Two Sorted Lists\n  result: "
+              << describe_list(merged_two) << "\n\n";
+
+    auto cycle_example = make_list({1, 2, 3, 4});
+    auto cycle_tail = cycle_example;
+    while (cycle_tail->next)
+        cycle_tail = cycle_tail->next;
+    cycle_tail->next = cycle_example->next;
+    std::cout << std::boolalpha;
+    std::cout << "Linked List Cycle\n  has_cycle: " << has_cycle(cycle_example)
+              << "\n\n";
+    cycle_tail->next.reset();
+
+    auto reorder_example = make_list({1, 2, 3, 4, 5});
+    reorder_example = reorder_list(reorder_example);
+    std::cout << "Reorder List\n  result: " << describe_list(reorder_example)
+              << "\n\n";
+
+    auto removal_example = make_list({1, 2, 3, 4, 5});
+    removal_example = remove_nth_from_end(removal_example, 2);
+    std::cout << "Remove Nth Node From End of List\n  result: "
+              << describe_list(removal_example) << "\n\n";
+
+    std::vector merged_inputs{make_list({1, 4, 7}), make_list({2, 5, 8}),
+                              make_list({3, 6, 9})};
+    const auto merged_k = merge_k_sorted_lists(merged_inputs);
+    std::cout << "Merge K Sorted Lists\n  result: " << describe_list(merged_k)
+              << "\n";
+
+    return 0;
+}
+
