@@ -1,0 +1,46 @@
+#include <iostream>
+#include <string>
+#include <vector>
+
+#include "alien_dictionary.hpp"
+
+using qpp::examples::advanced_graphs::alien_dictionary;
+using qpp::examples::advanced_graphs::describe_components;
+using qpp::examples::advanced_graphs::AlienDictionaryResult;
+
+void print_result(const std::vector<std::string>& words, const AlienDictionaryResult& result) {
+    std::cout << "Words: [";
+    for (std::size_t index = 0; index < words.size(); ++index) {
+        if (index > 0)
+            std::cout << ", ";
+        std::cout << words[index];
+    }
+    std::cout << "]\n";
+
+    std::cout << "  valid: " << std::boolalpha << result.valid << '\n';
+    std::cout << "  has_cycle: " << result.has_cycle << '\n';
+    std::cout << "  prefix_conflict: " << result.has_prefix_conflict << '\n';
+    std::cout << "  unique_order: " << result.is_unique << '\n';
+    std::cout << "  strongly_connected: "
+              << describe_components(result.strongly_connected) << '\n';
+
+    if (result.valid)
+        std::cout << "  derived order: " << result.order << "\n\n";
+    else
+        std::cout << "  derived order: <invalid>\n\n";
+}
+
+int main() {
+    std::vector<std::string> canonical{"wrt", "wrf", "er", "ett", "rftt"};
+    std::vector<std::string> ambiguous{"z", "x", "a", "za"};
+    std::vector<std::string> cyclic{"z", "x", "z"};
+    std::vector<std::string> prefix_conflict{"abc", "ab"};
+
+    print_result(canonical, alien_dictionary(canonical));
+    print_result(ambiguous, alien_dictionary(ambiguous));
+    print_result(cyclic, alien_dictionary(cyclic));
+    print_result(prefix_conflict, alien_dictionary(prefix_conflict));
+
+    return 0;
+}
+
