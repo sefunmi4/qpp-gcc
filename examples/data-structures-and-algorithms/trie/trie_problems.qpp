@@ -1,0 +1,49 @@
+#include <algorithm>
+#include <iostream>
+#include <string>
+#include <vector>
+
+#include "trie_problems.hpp"
+
+int main() {
+    using namespace qpp::examples::trie;
+
+    Trie trie;
+    trie.insert("apple");
+    trie.insert("app");
+    trie.insert("application");
+
+    std::cout << std::boolalpha;
+    std::cout << "Implement Trie (Prefix Tree)\n";
+    std::cout << "  search(\"app\"): " << trie.search("app") << '\n';
+    std::cout << "  search(\"apple\"): " << trie.search("apple") << '\n';
+    std::cout << "  search(\"apricot\"): " << trie.search("apricot") << '\n';
+    std::cout << "  starts_with(\"app\"): " << trie.starts_with("app") << "\n\n";
+
+    WordDictionary dictionary;
+    dictionary.add_word("bad");
+    dictionary.add_word("dad");
+    dictionary.add_word("mad");
+
+    std::cout << "Design Add and Search Words Data Structure\n";
+    std::cout << "  search(\"pad\"): " << dictionary.search("pad") << '\n';
+    std::cout << "  search(\"bad\"): " << dictionary.search("bad") << '\n';
+    std::cout << "  search(\".ad\"): " << dictionary.search(".ad") << '\n';
+    std::cout << "  search(\"b..\"): " << dictionary.search("b..") << "\n\n";
+
+    const std::vector<std::string> board{"oaan", "etae", "ihkr", "iflv"};
+    const std::vector<std::string> words{"oath", "pea", "eat", "rain"};
+    auto found = word_search_ii(board, words);
+    std::sort(found.begin(), found.end());
+
+    std::cout << "Word Search II\n  found: ";
+    for (std::size_t index = 0; index < found.size(); ++index) {
+        if (index)
+            std::cout << ", ";
+        std::cout << found[index];
+    }
+    std::cout << '\n';
+
+    return 0;
+}
+
