@@ -1,0 +1,62 @@
+#include <iomanip>
+#include <iostream>
+#include <string>
+#include <vector>
+
+#include "backtracking.hpp"
+
+namespace {
+
+void print_combinations(const std::vector<std::vector<int>>& combos) {
+    std::cout << "Found " << combos.size() << " combinations:\n";
+    for (const auto& combo : combos) {
+        std::cout << "  [";
+        for (std::size_t i = 0; i < combo.size(); ++i) {
+            std::cout << combo[i];
+            if (i + 1 < combo.size())
+                std::cout << ", ";
+        }
+        std::cout << "]\n";
+    }
+}
+
+void print_board(const std::vector<std::vector<char>>& board) {
+    std::cout << "Board:\n";
+    for (const auto& row : board) {
+        for (char cell : row)
+            std::cout << ' ' << cell;
+        std::cout << '\n';
+    }
+}
+
+} // namespace
+
+int main() {
+    using namespace qpp::examples::backtracking;
+
+    const std::vector<int> candidates{2, 3, 6, 7};
+    const int target = 7;
+    std::cout << "combination_sum([2,3,6,7], 7)\n";
+    auto combos = combination_sum(candidates, target);
+    print_combinations(combos);
+
+    std::vector<std::vector<char>> board{{'A', 'B', 'C', 'E'},
+                                         {'S', 'F', 'C', 'S'},
+                                         {'A', 'D', 'E', 'E'}};
+    print_board(board);
+
+    const std::string word1 = "ABCCED";
+    const bool found1 = word_search(board, word1);
+    std::cout << "word_search(\"" << word1 << "\") -> "
+              << std::boolalpha << found1 << " (p="
+              << word_search_probability(board, word1).probability() << ")\n";
+
+    const std::string word2 = "ABCB";
+    const bool found2 = word_search(board, word2);
+    std::cout << "word_search(\"" << word2 << "\") -> "
+              << std::boolalpha << found2 << " (p="
+              << word_search_probability(board, word2).probability() << ")\n";
+
+    return 0;
+}
+
