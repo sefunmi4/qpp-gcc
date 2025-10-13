@@ -1,0 +1,21 @@
+#include <iostream>
+#include <string>
+
+#include "dynamic_programming_2d.hpp"
+
+int main() {
+    using namespace qpp::examples::dynamic_programming_2d;
+
+    std::cout << "Dynamic Programming (2D) demonstrations\n";
+    std::cout << "-------------------------------------\n";
+
+    std::cout << "unique_paths(3, 7) -> " << unique_paths(3, 7) << '\n';
+
+    const std::string first = "abcde";
+    const std::string second = "ace";
+    std::cout << "longest_common_subsequence('" << first << "', '" << second
+              << "') -> '" << longest_common_subsequence(first, second) << "'\n";
+
+    return 0;
+}
+
