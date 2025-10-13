@@ -1,0 +1,89 @@
+#include <iostream>
+#include <memory>
+#include <unordered_set>
+#include <vector>
+
+#include "graph_problems.hpp"
+
+namespace {
+
+using qpp::examples::graph::Node;
+using qpp::examples::graph::can_finish_courses;
+using qpp::examples::graph::clone_graph;
+using qpp::examples::graph::count_components;
+using qpp::examples::graph::count_islands;
+using qpp::examples::graph::is_valid_tree;
+using qpp::examples::graph::pacific_atlantic;
+
+void delete_graph(Node* node, std::unordered_set<Node*>& seen) {
+    if (!node || !seen.insert(node).second)
+        return;
+
+    for (Node* neighbor : node->neighbors)
+        delete_graph(neighbor, seen);
+
+    delete node;
+}
+
+void delete_graph(Node* node) {
+    std::unordered_set<Node*> seen;
+    delete_graph(node, seen);
+}
+
+} // namespace
+
+int main() {
+    const std::vector<std::vector<char>> island_grid{{'1', '1', '0', '0', '0'},
+                                                     {'1', '1', '0', '0', '0'},
+                                                     {'0', '0', '1', '0', '0'},
+                                                     {'0', '0', '0', '1', '1'}};
+    std::cout << "Number of Islands\n  count: " << count_islands(island_grid)
+              << "\n\n";
+
+    std::vector<std::unique_ptr<Node>> original;
+    for (int value = 1; value <= 4; ++value)
+        original.push_back(std::make_unique<Node>(Node{value, {}}));
+
+    original[0]->neighbors = {original[1].get(), original[2].get()};
+    original[1]->neighbors = {original[2].get()};
+    original[2]->neighbors = {original[0].get(), original[3].get()};
+    original[3]->neighbors = {original[3].get()};
+
+    Node* cloned = clone_graph(original[0].get());
+    std::cout << "Clone Graph\n  root value: " << cloned->value << '\n';
+    std::cout << "  neighbor values:";
+    for (Node* neighbor : cloned->neighbors)
+        std::cout << ' ' << neighbor->value;
+    std::cout << "\n\n";
+    delete_graph(cloned);
+
+    const std::vector<std::vector<int>> heights{{1, 2, 2, 3, 5},
+                                                {3, 2, 3, 4, 4},
+                                                {2, 4, 5, 3, 1},
+                                                {6, 7, 1, 4, 5},
+                                                {5, 1, 1, 2, 4}};
+    const auto reachable = pacific_atlantic(heights);
+    std::cout << "Pacific Atlantic Water Flow\n  reachable cells:";
+    for (const auto& [row, col] : reachable)
+        std::cout << " (" << row << ", " << col << ')';
+    std::cout << "\n\n";
+
+    const std::vector<std::pair<int, int>> prerequisites{{1, 0}, {2, 1},
+                                                         {3, 2}};
+    std::cout << std::boolalpha;
+    std::cout << "Course Schedule\n  can_finish: "
+              << can_finish_courses(4, prerequisites) << "\n\n";
+
+    const std::vector<std::pair<int, int>> tree_edges{{0, 1}, {0, 2},
+                                                      {0, 3}, {1, 4}};
+    std::cout << "Graph Valid Tree\n  is_tree: "
+              << is_valid_tree(5, tree_edges) << "\n\n";
+
+    const std::vector<std::pair<int, int>> component_edges{{0, 1}, {1, 2},
+                                                           {3, 4}};
+    std::cout << "Number of Connected Components\n  components: "
+              << count_components(5, component_edges) << '\n';
+
+    return 0;
+}
+
