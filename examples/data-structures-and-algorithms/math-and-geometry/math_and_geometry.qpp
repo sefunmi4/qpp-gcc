@@ -1,0 +1,55 @@
+#include <iostream>
+#include <vector>
+
+#include "math_and_geometry.hpp"
+
+namespace {
+void print_matrix(const std::vector<std::vector<int>>& matrix,
+                  const std::string& label) {
+    std::cout << label << " (" << matrix.size() << "x"
+              << (matrix.empty() ? 0 : matrix.front().size()) << ")\n";
+    for (const auto& row : matrix) {
+        std::cout << "  [";
+        for (std::size_t i = 0; i < row.size(); ++i) {
+            if (i)
+                std::cout << ", ";
+            std::cout << row[i];
+        }
+        std::cout << "]\n";
+    }
+    std::cout << '\n';
+}
+
+void print_vector(const std::vector<int>& values, const std::string& label) {
+    std::cout << label << " -> [";
+    for (std::size_t i = 0; i < values.size(); ++i) {
+        if (i)
+            std::cout << ", ";
+        std::cout << values[i];
+    }
+    std::cout << "]\n\n";
+}
+} // namespace
+
+int main() {
+    using namespace qpp::examples::math_and_geometry;
+
+    std::vector<std::vector<int>> rotate_input{{1, 2, 3}, {4, 5, 6}, {7, 8, 9}};
+    print_matrix(rotate_input, "Original rotate_image input");
+    rotate_image(rotate_input);
+    print_matrix(rotate_input, "After rotate_image");
+
+    const std::vector<std::vector<int>> spiral_input{{1, 2, 3, 4},
+                                                     {5, 6, 7, 8},
+                                                     {9, 10, 11, 12}};
+    const auto spiral = spiral_matrix(spiral_input);
+    print_vector(spiral, "spiral_matrix traversal");
+
+    std::vector<std::vector<int>> zero_input{{0, 1, 2}, {3, 4, 5}, {6, 0, 7}};
+    print_matrix(zero_input, "Original set_matrix_zeroes input");
+    set_matrix_zeroes(zero_input);
+    print_matrix(zero_input, "After set_matrix_zeroes");
+
+    return 0;
+}
+
