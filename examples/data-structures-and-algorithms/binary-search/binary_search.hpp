@@ -13,69 +13,8 @@
 
 namespace qpp::examples::binary_search {
 
-/// Locate the minimum element of a rotated sorted array in logarithmic time.
-inline int find_min_in_rotated_sorted_array(const std::vector<int>& nums) {
-    if (nums.empty())
-        return 0;
-
-    int left = 0;
-    int right = static_cast<int>(nums.size()) - 1;
-    int best = nums.front();
-
-    while (left <= right) {
-        if (nums[static_cast<std::size_t>(left)] <=
-            nums[static_cast<std::size_t>(right)]) {
-            best = std::min(best, nums[static_cast<std::size_t>(left)]);
-            break;
-        }
-
-        const int mid = left + (right - left) / 2;
-        const int mid_value = nums[static_cast<std::size_t>(mid)];
-        best = std::min(best, mid_value);
-
-        if (mid_value >= nums[static_cast<std::size_t>(left)])
-            left = mid + 1;
-        else
-            right = mid;
-    }
-
-    return best;
-}
-
-/// Search for a target element inside a rotated sorted array.
-inline int search_in_rotated_sorted_array(const std::vector<int>& nums, int target) {
-    if (nums.empty())
-        return -1;
-
-    int left = 0;
-    int right = static_cast<int>(nums.size()) - 1;
-
-    while (left <= right) {
-        const int mid = left + (right - left) / 2;
-        const int mid_value = nums[static_cast<std::size_t>(mid)];
-
-        if (mid_value == target)
-            return mid;
-
-        if (nums[static_cast<std::size_t>(left)] <= mid_value) {
-            if (target >= nums[static_cast<std::size_t>(left)] && target < mid_value)
-                right = mid - 1;
-            else
-                left = mid + 1;
-        } else {
-            if (target > mid_value &&
-                target <= nums[static_cast<std::size_t>(right)])
-                left = mid + 1;
-            else
-                right = mid - 1;
-        }
-    }
-
-    return -1;
-}
-
 /// Locate the minimum element of a rotated sorted array of qints.
-inline int quantum_find_min_in_rotated_sorted_array(const std::qvector<qint>& nums) {
+inline int find_min_in_rotated_sorted_array(const std::qvector<qint>& nums) {
     if (nums.empty())
         return 0;
 
@@ -104,7 +43,7 @@ inline int quantum_find_min_in_rotated_sorted_array(const std::qvector<qint>& nu
 }
 
 /// Search for a target element in a rotated sorted array of qints.
-inline int quantum_search_in_rotated_sorted_array(const std::qvector<qint>& nums,
+inline int search_in_rotated_sorted_array(const std::qvector<qint>& nums,
                                                   int target) {
     if (nums.empty())
         return -1;

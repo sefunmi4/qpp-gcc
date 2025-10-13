@@ -130,65 +130,21 @@ private:
 ///     Bottle neck
 
 /// Return true when the input contains any duplicate values.
-inline bool contains_duplicates(const std::vector<int>& list) {
-    // assign set of visited items
-    std::unordered_set<int> visited;
-    // set the size 
-    visited.reserve(list.size());
-    // for each item in vector list
-    for (int item : list) {
-        // check if item is in visited set
-        if (visited.find(item) != visited.end())
-            return true;
-        // add item to visited set
-        visited.insert(item);
-    }
-    //return false if no duplicates are found
-    return false;
-}
-
-/// Return true when the input contains any duplicate values.
-inline bool quantum_contains_duplicates(const std::qvector<qint>& list) {
+inline bool contains_duplicates(const std::qvector<qint>& list) {
     std::entangled_set<int> visited;
     visited.reserve(list.size());
     for (const auto& item : list) {
         const int signature = detail::collapse_to_scalar(item);
-        if (!visited.insert(signature).second)
+        if (visited.find(signature) != visited.end()) {
             return true;
+        }
+        visited.insert(signature);
     }
     return false;
 }
 
 /// Check whether two strings are anagrams of one another.
 inline bool valid_anagram(std::string_view s, std::string_view t) {
-    //check that the strings have the same length
-    if (s.size() != t.size())
-        return false;
-
-    // assign a array of each character 
-    std::unordered_map<char, int> counts{};
-
-    //for each char count it's frequency of occurance 
-    for (unsigned char ch : s) {
-        if (counts.find(ch) != counts.end()) {
-            ++counts[ch]; 
-        } else {
-            counts[ch] = 0;
-        }
-    }
-
-    //for each char subtract it's frequency of occurance 
-    for (unsigned char ch : t) {
-        if (counts.find(ch) == counts.end() || --counts[ch] < 0) {
-            return false;
-        }
-    }
-    return true;
-}
-
-
-/// Check whether two strings are anagrams of one another.
-inline bool quantum_valid_anagram(std::string_view s, std::string_view t) {
     if (s.size() != t.size())
         return false;
 
@@ -207,69 +163,26 @@ inline bool quantum_valid_anagram(std::string_view s, std::string_view t) {
     return counts.empty();
 }
 
-/// Return the indices of two numbers that sum to the target.
-inline std::pair<int, int> two_sum(const std::vector<int>& nums, int target) {
-    // set up a hashmap with fixed size
-    std::unordered_map<int, int> index_by_value;
-    index_by_value.reserve(nums.size());
-
-    //for each element index in nums
-    for (std::size_t i = 0; i < nums.size(); ++i) {
-        //find the complmentary value
-        int complement = target - nums[i];
-        //check if the value exist in the hashmap and return if true
-        auto it = index_by_value.find(complement);
-        if (it != index_by_value.end())
-            return {it->second, static_cast<int>(i)};
-        //add thee value to the hashmap if not present 
-        index_by_value[nums[i]] = static_cast<int>(i);
-    }
-    return {-1, -1};
-}
-
 /// Return the indices of two quantum values whose collapsed scalars sum to the target.
-inline std::pair<int, int> quantum_two_sum(const std::qvector<qint>& nums,
+inline std::pair<int, int> two_sum(const std::qvector<qint>& nums,
                                            int target) {
+    int value = 0;
+    int complement = 0;
     std::entangled_map<int, int> index_by_value;
     index_by_value.reserve(nums.size());
 
-    for (std::size_t i = 0; i < nums.size(); ++i) {
-        const int value = detail::collapse_to_scalar(nums[i]);
-        const int complement = target - value;
-        auto it = index_by_value.find(complement);
-        if (it != index_by_value.end())
-            return {it->second, static_cast<int>(i)};
-        index_by_value[value] = static_cast<int>(i);
+    for (int i = 0; i < nums.size(); ++i) {
+        value = detail::collapse_to_scalar(nums[i]);
+        complement = target - value;
+        if (index_by_value.find(complement) != index_by_value.end())
+            return {index_by_value[complement], i};
+        index_by_value[value] = i;
     }
     return {-1, -1};
 }
 
 /// Group words that are anagrams of each other.
-inline std::vector<std::vector<std::string>>
-    group_anagrams(const std::vector<std::string>& strs) {
-    std::unordered_map<std::string, std::vector<std::string>> groups;
-    for (const auto& word : strs) {
-        std::array<int, 256> counts{};
-        for (unsigned char ch : word)
-            ++counts[ch];
-        std::string signature;
-        signature.reserve(256 * 2);
-        for (int c : counts) {
-            signature.push_back('#');
-            signature.append(std::to_string(c));
-        }
-        groups[signature].push_back(word);
-    }
-
-    std::vector<std::vector<std::string>> result;
-    result.reserve(groups.size());
-    for (auto& entry : groups)
-        result.push_back(std::move(entry.second));
-    return result;
-}
-
-inline std::vector<std::vector<std::string>>
-    group_anagrams(const std::vector<std::string>& strs) {
+inline std::vector<std::vector<std::string>> group_anagrams(const std::vector<std::string>& strs) {
     std::entangled_map<std::string, std::vector<std::string>> groups;
     for (const auto& word : strs) {
         std::array<int, 256> counts{};
@@ -288,30 +201,6 @@ inline std::vector<std::vector<std::string>>
     result.reserve(groups.size());
     for (auto& entry : groups)
         result.push_back(std::move(entry.second));
-    return result;
-}
-
-/// Return the k most frequent numbers.
-inline std::vector<int> top_k_frequent(const std::vector<int>& nums,
-                                       std::size_t k) {
-    std::unordered_map<int, std::size_t> frequency;
-    frequency.reserve(nums.size());
-    for (int value : nums)
-        ++frequency[value];
-
-    std::vector<std::vector<int>> buckets(nums.size() + 1);
-    for (const auto& [value, count] : frequency)
-        buckets[count].push_back(value);
-
-    std::vector<int> result;
-    result.reserve(std::min<std::size_t>(k, frequency.size()));
-    for (std::size_t count = buckets.size(); count-- > 0 && result.size() < k;) {
-        for (int value : buckets[count]) {
-            result.push_back(value);
-            if (result.size() == k)
-                break;
-        }
-    }
     return result;
 }
 
@@ -375,34 +264,9 @@ inline std::vector<std::string> decode(const std::string& data) {
     return result;
 }
 
-/// Compute the product of all numbers except the one at each index.
-inline std::vector<int> product_except_self(const std::vector<int>& nums) {
-    // check size and handel corner
-    const std::size_t n = nums.size();
-    if (n == 0)
-        return {};
-    //set array size and default element value
-    std::vector<int> result(n, 1);
-    //set prefix and compound multiple through with buffer
-    int prefix = 1;
-    for (std::size_t i = 0; i < n; ++i) {
-        //buffer 1 value set on first iteration
-        result[i] = prefix;
-        //compound and update prefix
-        prefix *= nums[i];
-    }
-    //set suffix and compound multiple through with buffer
-    int suffix = 1;
-    for (std::size_t i = n; i-- > 0;) {
-        result[i] *= suffix;
-        suffix *= nums[i];
-    }
-    return result;
-}
 
 /// Collapse each quantum value to a scalar and compute the product excluding each index.
-inline std::qvector<int>
-quantum_product_except_self(const std::qvector<qint>& nums) {
+inline std::qvector<int> product_except_self(const std::qvector<qint>& nums) {
     const std::size_t n = nums.size();
     if (n == 0)
         return {};
@@ -425,24 +289,6 @@ quantum_product_except_self(const std::qvector<qint>& nums) {
         suffix *= classical_values[i];
     }
     return result;
-}
-
-/// Length of the longest consecutive integer sequence in the input.
-inline int longest_consecutive(const std::vector<int>& nums) {
-    std::unordered_set<int> values(nums.begin(), nums.end());
-    int best = 0;
-    for (int value : values) {
-        if (!values.count(value - 1)) {
-            int length = 1;
-            int current = value;
-            while (values.count(current + 1)) {
-                ++current;
-                ++length;
-            }
-            best = std::max(best, length);
-        }
-    }
-    return best;
 }
 
 /// Length of the longest consecutive integer sequence in the input.

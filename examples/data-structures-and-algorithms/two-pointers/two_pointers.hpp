@@ -19,9 +19,9 @@
 
 namespace qpp::examples::two_pointers {
 
-/// Determine whether a string is a palindrome after removing non-alphanumeric
-/// characters and ignoring letter case.
-inline bool valid_palindrome(std::string_view s) {
+/// Determine whether a string is a palindrome using the same rules as the
+/// classical counterpart.
+inline bool quantum_valid_palindrome(std::string_view s) {
     std::size_t left = 0;
     std::size_t right = s.size();
 
@@ -49,58 +49,15 @@ inline bool valid_palindrome(std::string_view s) {
     return true;
 }
 
-/// Determine whether a string is a palindrome using the same rules as the
-/// classical counterpart.
-inline bool quantum_valid_palindrome(std::string_view s) {
-    return valid_palindrome(s);
-}
-
 /// Probability wrapper describing confidence that the provided string is a
 /// palindrome.
 inline qpp::pbool palindrome_bias(std::string_view s) {
     return qpp::pbool{valid_palindrome(s) ? 1.0 : 0.0};
 }
 
-/// Enumerate all unique triplets that sum to zero.
-inline std::vector<std::array<int, 3>> three_sum(const std::vector<int>& nums) {
-    if (nums.size() < 3)
-        return {};
-
-    std::vector<int> sorted(nums.begin(), nums.end());
-    std::sort(sorted.begin(), sorted.end());
-
-    std::vector<std::array<int, 3>> result;
-    for (std::size_t i = 0; i < sorted.size(); ++i) {
-        if (i > 0 && sorted[i] == sorted[i - 1])
-            continue;
-
-        std::size_t left = i + 1;
-        std::size_t right = sorted.size() - 1;
-        while (left < right) {
-            const long current = static_cast<long>(sorted[i]) +
-                                 static_cast<long>(sorted[left]) +
-                                 static_cast<long>(sorted[right]);
-            if (current < 0) {
-                ++left;
-            } else if (current > 0) {
-                --right;
-            } else {
-                result.push_back({sorted[i], sorted[left], sorted[right]});
-                ++left;
-                --right;
-                while (left < right && sorted[left] == sorted[left - 1])
-                    ++left;
-                while (left < right && sorted[right] == sorted[right + 1])
-                    --right;
-            }
-        }
-    }
-
-    return result;
-}
 
 /// Enumerate all unique triplets that sum to zero over quantum integers.
-inline std::vector<std::array<qint, 3>> quantum_three_sum(std::qvector<qint> nums) {
+inline std::vector<std::array<qint, 3>> three_sum(std::qvector<qint> nums) {
     if (nums.size() < 3)
         return {};
 
@@ -134,32 +91,9 @@ inline std::vector<std::array<qint, 3>> quantum_three_sum(std::qvector<qint> num
     return result;
 }
 
-/// Compute the largest area that can be formed between two vertical lines.
-inline int container_with_most_water(const std::vector<int>& height) {
-    if (height.size() < 2)
-        return 0;
-
-    std::size_t left = 0;
-    std::size_t right = height.size() - 1;
-    int best = 0;
-
-    while (left < right) {
-        const int min_height =
-            std::min(height[left], height[right]);
-        const int width = static_cast<int>(right - left);
-        best = std::max(best, min_height * width);
-
-        if (height[left] < height[right])
-            ++left;
-        else
-            --right;
-    }
-
-    return best;
-}
 
 /// Compute the largest container area using quantum integers.
-inline qint quantum_container_with_most_water(const std::qvector<qint>& height) {
+inline qint container_with_most_water(const std::qvector<qint>& height) {
     if (height.size() < 2)
         return 0;
 

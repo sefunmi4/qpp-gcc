@@ -15,19 +15,9 @@
 
 namespace qpp::examples::sliding_window {
 
-/// Compute the maximum profit achievable with a single buy/sell transaction.
-inline int best_time_to_buy_and_sell_stock(const std::vector<int>& prices) {
-    int best_profit = 0;
-    int cheapest_so_far = std::numeric_limits<int>::max();
-    for (int price : prices) {
-        cheapest_so_far = std::min(cheapest_so_far, price);
-        best_profit = std::max(best_profit, price - cheapest_so_far);
-    }
-    return best_profit;
-}
 
 /// Compute the maximum profit achievable with a single buy/sell transaction.
-inline qint quantum_best_time_to_buy_and_sell_stock(const std::qvector<qint>& prices) {
+inline qint best_time_to_buy_and_sell_stock(const std::qvector<qint>& prices) {
     qint best_profit = 0;
     qint cheapest_so_far = std::numeric_limits<qint>::max();
     for (qint price : prices) {
@@ -37,25 +27,9 @@ inline qint quantum_best_time_to_buy_and_sell_stock(const std::qvector<qint>& pr
     return best_profit;
 }
 
+
 /// Length of the longest substring without repeating characters.
 inline int longest_substring_without_repeating_characters(std::string_view s) {
-    std::array<int, 256> last_seen;
-    last_seen.fill(-1);
-
-    int best = 0;
-    int window_start = 0;
-    for (int i = 0; i < static_cast<int>(s.size()); ++i) {
-        const unsigned char ch = static_cast<unsigned char>(s[static_cast<std::size_t>(i)]);
-        if (last_seen[ch] >= window_start)
-            window_start = last_seen[ch] + 1;
-        last_seen[ch] = i;
-        best = std::max(best, i - window_start + 1);
-    }
-    return best;
-}
-
-/// Length of the longest substring without repeating characters.
-inline int quantum_longest_substring_without_repeating_characters(std::string_view s) {
     std::qarray<qint, 256> last_seen;
     last_seen.fill(-1);
 
@@ -71,34 +45,9 @@ inline int quantum_longest_substring_without_repeating_characters(std::string_vi
     return best;
 }
 
-/// Longest substring obtainable after replacing at most k characters.
-inline int longest_repeating_character_replacement(std::string_view s, int k) {
-    if (s.empty())
-        return 0;
-
-    std::array<int, 256> frequency{};
-    int window_start = 0;
-    int max_frequency_in_window = 0;
-    int best = 0;
-
-    for (int i = 0; i < static_cast<int>(s.size()); ++i) {
-        const unsigned char ch = static_cast<unsigned char>(s[static_cast<std::size_t>(i)]);
-        max_frequency_in_window = std::max(max_frequency_in_window, ++frequency[ch]);
-
-        while (i - window_start + 1 - max_frequency_in_window > k) {
-            const unsigned char left_char =
-                static_cast<unsigned char>(s[static_cast<std::size_t>(window_start)]);
-            --frequency[left_char];
-            ++window_start;
-        }
-
-        best = std::max(best, i - window_start + 1);
-    }
-    return best;
-}
 
 // Longest substring obtainable after replacing at most k characters.
-inline qint quantum_longest_repeating_character_replacement(std::string_view s, qint k) {
+inline qint longest_repeating_character_replacement(std::string_view s, qint k) {
     if (s.empty())
         return 0;
 
@@ -125,48 +74,6 @@ inline qint quantum_longest_repeating_character_replacement(std::string_view s, 
 
 /// Minimum length substring of text that contains all characters of pattern.
 inline std::string minimum_window_substring(std::string_view text,
-                                            std::string_view pattern) {
-    if (pattern.empty() || text.empty() || pattern.size() > text.size())
-        return {};
-
-    std::array<int, 256> required{};
-    for (unsigned char ch : pattern)
-        ++required[ch];
-
-    int missing = static_cast<int>(pattern.size());
-    std::size_t window_start = 0;
-    std::size_t best_start = 0;
-    std::size_t best_length = std::numeric_limits<std::size_t>::max();
-
-    for (std::size_t window_end = 0; window_end < text.size(); ++window_end) {
-        const unsigned char ch = static_cast<unsigned char>(text[window_end]);
-        if (required[ch] > 0)
-            --missing;
-        --required[ch];
-
-        while (missing == 0) {
-            const std::size_t current_length = window_end - window_start + 1;
-            if (current_length < best_length) {
-                best_length = current_length;
-                best_start = window_start;
-            }
-
-            const unsigned char left_char =
-                static_cast<unsigned char>(text[window_start]);
-            ++required[left_char];
-            if (required[left_char] > 0)
-                ++missing;
-            ++window_start;
-        }
-    }
-
-    if (best_length == std::numeric_limits<std::size_t>::max())
-        return {};
-    return std::string{text.substr(best_start, best_length)};
-}
-
-/// Minimum length substring of text that contains all characters of pattern.
-inline std::string quantum_minimum_window_substrin g(std::string_view text,
                                             std::string_view pattern) {
     if (pattern.empty() || text.empty() || pattern.size() > text.size())
         return {};
