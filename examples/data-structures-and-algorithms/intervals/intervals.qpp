@@ -1,0 +1,78 @@
+#include <iomanip>
+#include <iostream>
+#include <string>
+#include <vector>
+
+#include "intervals.hpp"
+
+namespace {
+std::string basis_string(std::size_t index, std::size_t qubits) {
+    std::string bits(qubits, '0');
+    for (std::size_t q = 0; q < qubits; ++q)
+        bits[qubits - q - 1] = ((index >> q) & 1u) ? '1' : '0';
+    return bits;
+}
+
+void print_state(const qpp::qstruct& state, const std::string& label) {
+    const std::size_t qubits = state.qubits();
+    std::cout << label << " (" << qubits << " qubits) amplitudes:\n";
+    for (std::size_t i = 0; i < state.amplitude.size(); ++i) {
+        const double probability = std::norm(state.amplitude[i]);
+        if (probability < 1e-9)
+            continue;
+        std::cout << "  |" << basis_string(i, qubits) << "> -> "
+                  << state.amplitude[i] << " (p=" << probability << ")\n";
+    }
+}
+
+void print_intervals(const std::vector<qpp::examples::intervals::interval>& intervals,
+                     const std::string& label) {
+    std::cout << label << " [";
+    for (std::size_t i = 0; i < intervals.size(); ++i) {
+        if (i)
+            std::cout << ", ";
+        std::cout << '[' << intervals[i][0] << ',' << intervals[i][1] << ']';
+    }
+    std::cout << "]\n";
+}
+} // namespace
+
+int main() {
+    using namespace qpp::examples::intervals;
+
+    const std::vector<interval> initial{{1, 3}, {6, 9}};
+    const interval new_interval{2, 5};
+    const auto inserted = insert_interval(initial, new_interval);
+    print_intervals(initial, "insert_interval input:");
+    print_intervals(std::vector<interval>{new_interval}, "new interval:");
+    print_intervals(inserted, "insert_interval output:");
+
+    const std::vector<interval> to_merge{{1, 4}, {0, 2}, {3, 5}, {10, 12}};
+    const auto merged = merge_intervals(to_merge);
+    print_intervals(to_merge, "merge_intervals input:");
+    print_intervals(merged, "merge_intervals output:");
+
+    const std::vector<interval> overlaps{{1, 2}, {2, 3}, {3, 4}, {1, 3}};
+    std::cout << "erase_overlap_intervals -> " << erase_overlap_intervals(overlaps)
+              << '\n';
+
+    const std::vector<interval> meetings{{0, 30}, {5, 10}, {15, 20}};
+    std::cout << std::boolalpha;
+    std::cout << "can_attend_all_meetings({[0,30],[5,10],[15,20]}) -> "
+              << can_attend_all_meetings(meetings) << '\n';
+
+    const std::vector<interval> rooms_example{{0, 30}, {5, 10}, {15, 20}, {25, 40}};
+    std::cout << std::noboolalpha;
+    std::cout << "min_meeting_rooms({[0,30],[5,10],[15,20],[25,40]}) -> "
+              << min_meeting_rooms(rooms_example) << '\n';
+
+    const auto bias = conflict_bias(to_merge);
+    std::cout << std::setprecision(4)
+              << "conflict_bias probability -> " << bias.probability() << '\n';
+
+    const auto interval_register = interval_index_superposition(to_merge.size());
+    print_state(interval_register.data(), "Interval index superposition");
+
+    return 0;
+}
+
