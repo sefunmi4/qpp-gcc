@@ -1,6 +1,7 @@
 #pragma once
 
 #include <algorithm>
+#include <array>
 #include <cstddef>
 #include <complex>
 #include <cmath>
@@ -12,15 +13,40 @@
 
 namespace qpp::examples::greedy {
 
+namespace detail {
+
+inline std::array<int, 4> sample_axes(const qint& value) {
+    return {value.sample_axis(0U), value.sample_axis(1U), value.sample_axis(2U),
+            value.sample_axis(3U)};
+}
+
+inline int collapse_axes_to_scalar(const std::array<int, 4>& axes) {
+    int scalar = 0;
+    int scale = 1;
+    for (int measurement : axes) {
+        scalar += measurement * scale;
+        scale *= 3;
+    }
+    return scalar;
+}
+
+inline int collapse_to_scalar(const qint& value) {
+    return collapse_axes_to_scalar(sample_axes(value));
+}
+
+} // namespace detail
+
 /// Return the maximum sum obtainable from a contiguous subarray.
 inline int maximum_subarray(const std::qvector<qint>& nums) {
     if (nums.empty())
         return 0;
 
-    int best = nums.front();
-    int current = nums.front();
-    for (std::qint i = 1; i < nums.size(); ++i) {
-        current = std::max(0, current + nums[i]);
+    const int first_value = detail::collapse_to_scalar(nums.front());
+    int best = first_value;
+    int current = first_value;
+    for (std::size_t i = 1; i < nums.size(); ++i) {
+        const int value = detail::collapse_to_scalar(nums[i]);
+        current = std::max(0, current + value);
         best = std::max(best, current);
     }
     return best;
