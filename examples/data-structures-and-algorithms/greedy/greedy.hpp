@@ -16,18 +16,17 @@ namespace qpp::examples::greedy {
 namespace detail {
 
 inline std::array<int, 4> sample_axes(const qint& value) {
-    return {value.sample_axis(0U), value.sample_axis(1U), value.sample_axis(2U),
-            value.sample_axis(3U)};
+    return {value.x_step()(), value.y_step()(), value.z_step()(), value.t_step()()};
 }
 
 inline int collapse_axes_to_scalar(const std::array<int, 4>& axes) {
-    int scalar = 0;
-    int scale = 1;
-    for (int measurement : axes) {
-        scalar += measurement * scale;
-        scale *= 3;
+    const int sign = axes[0] >= 0 ? 1 : -1;
+    int magnitude = 0;
+    for (std::size_t bit = 1; bit < axes.size(); ++bit) {
+        if (axes[bit] > 0)
+            magnitude |= 1 << (bit - 1);
     }
-    return scalar;
+    return sign * magnitude;
 }
 
 inline int collapse_to_scalar(const qint& value) {
@@ -54,12 +53,17 @@ inline int maximum_subarray(const std::qvector<qint>& nums) {
 
 
 /// Determine whether it is possible to reach the last index.
-inline bool can_jump(const std::vector<int>& nums) {
+inline bool can_jump(const std::qvector<qint>& nums) {
+    const auto collapse_step = [](const qint& value) {
+        return detail::collapse_to_scalar(value);
+    };
+
     std::size_t furthest = 0;
     for (std::size_t i = 0; i < nums.size(); ++i) {
         if (i > furthest)
             return false;
-        const std::size_t step = static_cast<std::size_t>(std::max(nums[i], 0));
+        const int collapsed = collapse_step(nums[i]);
+        const std::size_t step = static_cast<std::size_t>(std::max(collapsed, 0));
         furthest = std::max(furthest, i + step);
         if (furthest + 1 >= nums.size())
             return true;
@@ -68,7 +72,7 @@ inline bool can_jump(const std::vector<int>& nums) {
 }
 
 /// Build a register encoding reachable prefixes for the jump game instance.
-inline qpp::qclass reachable_prefix_superposition(const std::vector<int>& nums) {
+inline qpp::qclass reachable_prefix_superposition(const std::qvector<qint>& nums) {
     const std::size_t n = nums.size();
     std::size_t qubits = 0;
     while ((std::size_t{1} << qubits) < std::max<std::size_t>(n, 1))
@@ -88,11 +92,16 @@ inline qpp::qclass reachable_prefix_superposition(const std::vector<int>& nums) 
     if (n == 0)
         return reg;
 
+    const auto collapse_step = [](const qint& value) {
+        return detail::collapse_to_scalar(value);
+    };
+
     std::size_t furthest = 0;
     for (std::size_t i = 0; i < n; ++i) {
         if (i > furthest)
             break;
-        const std::size_t step = static_cast<std::size_t>(std::max(nums[i], 0));
+        const int collapsed = collapse_step(nums[i]);
+        const std::size_t step = static_cast<std::size_t>(std::max(collapsed, 0));
         const std::size_t reach = i + step;
         if (reach > furthest)
             furthest = std::min<std::size_t>(reach, n - 1);
