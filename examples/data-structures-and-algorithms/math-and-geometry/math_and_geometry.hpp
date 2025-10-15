@@ -2,7 +2,8 @@
 
 #include <algorithm>
 #include <cstddef>
-#include <vector>
+
+#include "qpp/qvector"
 
 namespace qpp::examples::math_and_geometry {
 
@@ -12,7 +13,7 @@ namespace qpp::examples::math_and_geometry {
 /// outer ring is swapped into its rotated position using temporary storage
 /// for the four involved values. The process is then repeated for the next
 /// inner ring until the center of the matrix is reached.
-inline void rotate_image(std::vector<std::vector<int>>& matrix) {
+inline void rotate_image(std::qvector<std::qvector<int>>& matrix) {
     const std::size_t n = matrix.size();
     if (n == 0)
         return;
@@ -44,12 +45,12 @@ inline void rotate_image(std::vector<std::vector<int>>& matrix) {
 /// The traversal maintains shrinking boundaries for the rows and columns
 /// and iteratively walks along the four directions (right, down, left,
 /// up) until the full matrix has been consumed.
-inline std::vector<int>
-spiral_matrix(const std::vector<std::vector<int>>& matrix) {
+inline std::qvector<int>
+spiral_matrix(const std::qvector<std::qvector<int>>& matrix) {
     if (matrix.empty() || matrix.front().empty())
         return {};
 
-    std::vector<int> result;
+    std::qvector<int> result;
     const std::ptrdiff_t row_count =
         static_cast<std::ptrdiff_t>(matrix.size());
     const std::ptrdiff_t col_count =
@@ -96,7 +97,7 @@ spiral_matrix(const std::vector<std::vector<int>>& matrix) {
 /// The implementation uses the first row and column as marker storage to
 /// achieve constant extra space while keeping track of which rows and
 /// columns must be zeroed out.
-inline void set_matrix_zeroes(std::vector<std::vector<int>>& matrix) {
+inline void set_matrix_zeroes(std::qvector<std::qvector<int>>& matrix) {
     if (matrix.empty() || matrix.front().empty())
         return;
 
