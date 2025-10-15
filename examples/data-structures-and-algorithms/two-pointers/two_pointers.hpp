@@ -19,9 +19,8 @@
 
 namespace qpp::examples::two_pointers {
 
-/// Determine whether a string is a palindrome using the same rules as the
-/// classical counterpart.
-inline bool quantum_valid_palindrome(std::string_view s) {
+/// Determine whether a string is a palindrome ignoring punctuation and case.
+inline bool valid_palindrome(std::string_view s) {
     std::size_t left = 0;
     std::size_t right = s.size();
 
@@ -49,10 +48,17 @@ inline bool quantum_valid_palindrome(std::string_view s) {
     return true;
 }
 
+/// Determine whether a string is a palindrome using the same rules as the
+/// classical counterpart.
+inline bool quantum_valid_palindrome(std::string_view s) {
+    return valid_palindrome(s);
+}
+
 /// Probability wrapper describing confidence that the provided string is a
 /// palindrome.
 inline qpp::pbool palindrome_bias(std::string_view s) {
-    return qpp::pbool{valid_palindrome(s) ? 1.0 : 0.0};
+    const double probability = valid_palindrome(s) ? 1.0 : 0.0;
+    return qpp::pbool{probability};
 }
 
 

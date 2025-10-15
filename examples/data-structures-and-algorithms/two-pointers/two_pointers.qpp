@@ -44,9 +44,12 @@ int main() {
     const std::string palindrome_sample = "A man, a plan, a canal: Panama";
     const std::string non_palindrome_sample = "quantum register";
     std::cout << "valid_palindrome('" << palindrome_sample << "') -> "
-              << valid_palindrome(palindrome_sample) << '\n';
+              << qpp::examples::two_pointers::valid_palindrome(palindrome_sample)
+              << '\n';
     std::cout << "valid_palindrome('" << non_palindrome_sample << "') -> "
-              << valid_palindrome(non_palindrome_sample) << '\n';
+              << qpp::examples::two_pointers::valid_palindrome(
+                     non_palindrome_sample)
+              << '\n';
 
     std::cout << "quantum_valid_palindrome('Able was I ere I saw Elba') -> "
               << quantum_valid_palindrome("Able was I ere I saw Elba") << '\n';
