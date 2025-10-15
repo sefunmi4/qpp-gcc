@@ -31,3 +31,8 @@ add_example(bell_state ../qpp/backend/LocalSimBackend.cpp)
 add_example(hardware_demo ../qpp/backend/LocalSimBackend.cpp ../qpp/backend/QPUBackend.cpp)
 add_example(hardware_api_example)
 add_example(master_demo ../qpp/backend/LocalSimBackend.cpp)
+
+set(bit_manipulation_src
+    ${CMAKE_CURRENT_SOURCE_DIR}/data-structures-and-algorithms/bit-manipulation/bit_manipulation.qpp)
+set_source_files_properties(${bit_manipulation_src} PROPERTIES LANGUAGE CXX COMPILE_FLAGS "-x c++")
+add_executable(bit_manipulation ${bit_manipulation_src})

@@ -48,10 +48,9 @@ int main() {
     bool all_passed = true;
 
     const std::uint32_t sample = 0b1011u;
-    const auto quantum_sample = make_quantum_from_uint32(sample);
 
     const int classical_hw = hamming_weight(sample);
-    const int quantum_hw = hamming_weight(quantum_sample);
+    const int quantum_hw = quantum_hamming_weight(sample);
     std::cout << "hamming_weight(0b" << std::bitset<4>(sample) << ") -> " << classical_hw
               << '\n';
     expect_equal("quantum hamming_weight matches classical", classical_hw, quantum_hw,
@@ -61,7 +60,7 @@ int main() {
     std::cout << "reverse_bits(0b" << std::bitset<4>(sample) << ") -> 0b"
               << std::bitset<32>(classical_reversed) << '\n';
     const std::uint32_t quantum_reversed_nibble =
-        collapse_quantum_to_uint32(reverse_bits(quantum_sample));
+        collapse_quantum_to_uint32(quantum_reverse_bits(sample));
     const std::uint32_t expected_nibble =
         classical_reversed >> (32U - quantum_bit_width);
     expect_equal("quantum reverse_bits nibble", expected_nibble, quantum_reversed_nibble,
@@ -75,7 +74,7 @@ int main() {
             std::cout << ", ";
     }
     std::cout << "]\n";
-    const auto quantum_counts = counting_bits(5);
+    const auto quantum_counts = quantum_counting_bits(5);
     bool counts_match = classical_counts.size() == quantum_counts.size();
     std::vector<int> collapsed_quantum_counts;
     collapsed_quantum_counts.reserve(quantum_counts.size());
@@ -108,20 +107,15 @@ int main() {
     const std::vector<int> missing_input{3, 0, 1};
     const int classical_missing = missing_number(missing_input);
     std::cout << "missing_number([3,0,1]) -> " << classical_missing << '\n';
-    const std::qvector<::qint> quantum_missing{
-        make_quantum_from_int(3),
-        make_quantum_from_int(0),
-        make_quantum_from_int(1),
-    };
     const int quantum_missing_value =
-        collapse_quantum_to_int(quantum_missing_number(quantum_missing));
+        collapse_quantum_to_int(quantum_missing_number(missing_input));
     expect_equal("quantum missing_number", classical_missing, quantum_missing_value,
                  all_passed);
 
     const int classical_sum = sum_two_integers(5, -3);
     std::cout << "sum_two_integers(5, -3) -> " << classical_sum << '\n';
-    const int quantum_sum_value = collapse_quantum_to_int(
-        quantum_sum_two_integers(make_quantum_from_int(5), make_quantum_from_int(-3)));
+    const int quantum_sum_value =
+        collapse_quantum_to_int(quantum_sum_two_integers(5, -3));
     expect_equal("quantum sum_two_integers", classical_sum, quantum_sum_value, all_passed);
 
     auto superposition = make_uniform_bit_superposition(3);
