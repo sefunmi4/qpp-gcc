@@ -131,8 +131,10 @@ inline std::qvector<qint> counting_bits(int n) {
 }
 
 /// Compute population counts for the range [0, n] and encode them as quantum integers.
-inline std::qvector<qint> quantum_counting_bits(int n) {
-    return counting_bits(n);
+inline std::qvector<qint> quantum_counting_bits(int n) { return counting_bits(n); }
+
+inline std::qvector<qint> quantum_counting_bits(std::uint32_t n) {
+    return quantum_counting_bits(static_cast<int>(n));
 }
 
 /// Reverse the bits of a 32-bit classical value.
@@ -223,14 +225,34 @@ inline qpp::qclass make_uniform_bit_superposition(std::size_t bit_width) {
 /// Convenience wrappers mirroring the quantum-prefixed APIs used by the sample.
 inline int quantum_hamming_weight(const qint& value) { return hamming_weight(value); }
 
+inline int quantum_hamming_weight(std::uint32_t value) {
+    return quantum_hamming_weight(make_quantum_from_uint32(value));
+}
+
 inline qint quantum_reverse_bits(const qint& value) { return reverse_bits(value); }
+
+inline qint quantum_reverse_bits(std::uint32_t value) {
+    return quantum_reverse_bits(make_quantum_from_uint32(value));
+}
 
 inline qint quantum_missing_number(const std::qvector<qint>& nums) {
     return missing_number(nums);
 }
 
+inline qint quantum_missing_number(const std::vector<int>& nums) {
+    return quantum_missing_number(detail::build_vector(nums));
+}
+
 inline qint quantum_sum_two_integers(const qint& a, const qint& b) {
     return sum_two_integers(a, b);
+}
+
+inline qint quantum_sum_two_integers(int a, int b) {
+    return quantum_sum_two_integers(make_quantum_from_int(a), make_quantum_from_int(b));
+}
+
+inline qint quantum_sum_two_integers(std::uint32_t a, std::uint32_t b) {
+    return quantum_sum_two_integers(make_quantum_from_uint32(a), make_quantum_from_uint32(b));
 }
 
 } // namespace qpp::examples::bit_manipulation
