@@ -3,12 +3,9 @@
 #include <algorithm>
 #include <cstddef>
 #include <functional>
-#include <stack>
 #include <string>
-#include <unordered_map>
-#include <unordered_set>
-#include <vector>
 
+#include <qpp/entangled_map>
 #include <qpp/entangled_set>
 #include <qpp/qvector>
 
@@ -20,6 +17,8 @@ using CharSet = std::entangled_set<char, CharHash, CharEqual>;
 using CharDegreeMap = std::entangled_map<char, std::size_t, CharHash, CharEqual>;
 using Graph = std::entangled_map<char, CharSet, CharHash, CharEqual>;
 using Indegrees = CharDegreeMap;
+using CharStack = std::qvector<char>;
+using CharQueue = std::qvector<char>;
 
 struct GraphAnalysis {
     Graph adjacency;
@@ -75,16 +74,18 @@ inline GraphAnalysis build_dependency_graph(const std::qvector<std::string>& wor
 inline void tarjan_dfs(const Graph& graph, char node, std::size_t& index,
                        CharDegreeMap& indices,
                        CharDegreeMap& lowlinks,
-                       CharSet& on_stack, std::stack<char>& stack,
+                       CharSet& on_stack, CharStack& stack,
                        std::qvector<std::qvector<char>>& components) {
     indices[node] = index;
     lowlinks[node] = index;
     ++index;
-    stack.push(node);
+    stack.push_back(node);
     on_stack.insert(node);
 
     if (const auto it = graph.find(node); it != graph.end()) {
-        for (const auto neighbor : it->second) {
+        std::qvector<char> neighbors(it->second.begin(), it->second.end());
+        std::sort(neighbors.begin(), neighbors.end());
+        for (const auto neighbor : neighbors) {
             if (!indices.count(neighbor)) {
                 tarjan_dfs(graph, neighbor, index, indices, lowlinks, on_stack, stack, components);
                 lowlinks[node] = std::min(lowlinks[node], lowlinks[neighbor]);
@@ -97,8 +98,8 @@ inline void tarjan_dfs(const Graph& graph, char node, std::size_t& index,
     if (lowlinks[node] == indices[node]) {
         std::qvector<char> component;
         while (!stack.empty()) {
-            const auto top = stack.top();
-            stack.pop();
+            const auto top = stack.back();
+            stack.pop_back();
             on_stack.erase(top);
             component.push_back(top);
             if (top == node)
@@ -112,11 +113,17 @@ inline std::qvector<std::qvector<char>> strongly_connected_components(const Grap
     CharDegreeMap indices;
     CharDegreeMap lowlinks;
     CharSet on_stack;
-    std::stack<char> stack;
+    CharStack stack;
     std::qvector<std::qvector<char>> components;
     std::size_t index = 0;
 
-    for (const auto& [node, _] : graph) {
+    std::qvector<char> nodes;
+    nodes.reserve(graph.size());
+    for (const auto& [node, _] : graph)
+        nodes.push_back(node);
+    std::sort(nodes.begin(), nodes.end());
+
+    for (const auto node : nodes) {
         if (!indices.count(node))
             tarjan_dfs(graph, node, index, indices, lowlinks, on_stack, stack, components);
     }
@@ -141,7 +148,7 @@ inline AlienDictionaryResult alien_dictionary(const std::qvector<std::string>& w
     result.strongly_connected = strongly_connected_components(analysis.adjacency);
 
     auto indegree = analysis.indegree;
-    std::qvector<char> queue;
+    CharQueue queue;
     for (const auto& [node, degree] : indegree) {
         if (degree == 0)
             queue.push_back(node);
@@ -161,7 +168,9 @@ inline AlienDictionaryResult alien_dictionary(const std::qvector<std::string>& w
         ++processed;
 
         if (const auto it = analysis.adjacency.find(node); it != analysis.adjacency.end()) {
-            for (const auto neighbor : it->second) {
+            std::qvector<char> neighbors(it->second.begin(), it->second.end());
+            std::sort(neighbors.begin(), neighbors.end());
+            for (const auto neighbor : neighbors) {
                 auto& degree = indegree[neighbor];
                 if (degree > 0)
                     --degree;
