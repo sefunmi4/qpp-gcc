@@ -1,6 +1,8 @@
 #include <iostream>
 #include <optional>
-#include <vector>
+
+#include <qpp/qint>
+#include <qpp/qvector>
 
 #include "tree_problems.hpp"
 
@@ -32,7 +34,7 @@ int main() {
     auto bst_example = make_tree({6, 2, 8, 0, 4, 7, 9, std::nullopt, std::nullopt, 3, 5});
     const auto lca = lowest_common_ancestor_bst(bst_example, 2, 8);
     std::cout << "Lowest Common Ancestor of a Binary Search Tree\n  lca(2, 8): "
-              << (lca ? lca->value : -1) << "\n\n";
+              << (lca ? lca->label.measure() : -1) << "\n\n";
 
     auto level_order_example = make_tree({1, 2, 3, 4, std::nullopt, 5});
     const auto levels = level_order(level_order_example);
@@ -48,8 +50,8 @@ int main() {
     std::cout << "Kth Smallest Element in a BST\n  k=3: "
               << (kth ? std::to_string(*kth) : std::string{"not found"}) << "\n\n";
 
-    const std::vector<int> preorder{3, 9, 20, 15, 7};
-    const std::vector<int> inorder{9, 3, 15, 20, 7};
+    const std::qvector<int> preorder{3, 9, 20, 15, 7};
+    const std::qvector<int> inorder{9, 3, 15, 20, 7};
     auto constructed = build_tree(preorder, inorder);
     std::cout << "Construct Binary Tree From Preorder and Inorder Traversal\n  levels: "
               << describe_levels(level_order(constructed)) << "\n\n";
@@ -65,6 +67,12 @@ int main() {
     const auto deserialized = deserialize(serialized);
     std::cout << "  deserialized levels: "
               << describe_levels(level_order(deserialized)) << '\n';
+
+    auto quantum_manual = make_node(QuantumLabel::encode(42));
+    quantum_manual->left = make_node(QuantumLabel::encode(21));
+    quantum_manual->right = make_node(QuantumLabel::encode(84));
+    std::cout << "Manual Quantum Construction\n  root measurement: "
+              << quantum_manual->label.measure() << '\n';
 
     return 0;
 }
