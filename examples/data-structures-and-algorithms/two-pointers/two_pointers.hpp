@@ -62,22 +62,49 @@ inline qpp::pbool palindrome_bias(std::string_view s) {
 }
 
 
-/// Enumerate all unique triplets that sum to zero over quantum integers.
-inline std::vector<std::array<qint, 3>> three_sum(std::qvector<qint> nums) {
+/// Collapse the logical axis representing the classical value of a quantum
+/// integer.
+inline int measure_value(const qint& value) {
+    const auto stats = value.measure_axis(0U);
+    if (stats.collapsed_value)
+        return *stats.collapsed_value;
+    return value.x_step()();
+}
+
+namespace detail {
+
+/// Measure each value to obtain classical integers for downstream processing.
+inline std::vector<int>
+collapse_two_pointer_inputs(const std::qvector<qint>& values) {
+    std::vector<int> collapsed;
+    collapsed.reserve(values.size());
+
+    for (const auto& value : values)
+        collapsed.push_back(measure_value(value));
+
+    return collapsed;
+}
+
+} // namespace detail
+
+/// Enumerate all unique triplets that sum to zero over classical integers.
+inline std::vector<std::array<int, 3>> three_sum(std::vector<int> nums) {
+    std::vector<std::array<int, 3>> result;
     if (nums.size() < 3)
-        return {};
+        return result;
 
     std::sort(nums.begin(), nums.end());
 
-    std::vector<std::array<qint, 3>> result;
-    for (std::size_t i = 0; i < nums.size(); ++i) {
+    for (std::size_t i = 0; i + 2 < nums.size(); ++i) {
         if (i > 0 && nums[i] == nums[i - 1])
             continue;
 
         std::size_t left = i + 1;
         std::size_t right = nums.size() - 1;
         while (left < right) {
-            const qint current = nums[i] + nums[left] + nums[right];
+            const long long current = static_cast<long long>(nums[i]) +
+                                      static_cast<long long>(nums[left]) +
+                                      static_cast<long long>(nums[right]);
             if (current < 0) {
                 ++left;
             } else if (current > 0) {
@@ -97,19 +124,33 @@ inline std::vector<std::array<qint, 3>> three_sum(std::qvector<qint> nums) {
     return result;
 }
 
+/// Enumerate all unique triplets that sum to zero for quantum integers by
+/// measuring inputs and lifting the classical results back into qints.
+inline std::vector<std::array<qint, 3>>
+quantum_three_sum(const std::qvector<qint>& nums) {
+    const auto collapsed = detail::collapse_two_pointer_inputs(nums);
+    const auto classical = three_sum(collapsed);
 
-/// Compute the largest container area using quantum integers.
-inline qint container_with_most_water(const std::qvector<qint>& height) {
+    std::vector<std::array<qint, 3>> lifted;
+    lifted.reserve(classical.size());
+    for (const auto& triplet : classical)
+        lifted.push_back({qint(triplet[0]), qint(triplet[1]), qint(triplet[2])});
+
+    return lifted;
+}
+
+/// Compute the largest container area using classical integers.
+inline int container_with_most_water(const std::vector<int>& height) {
     if (height.size() < 2)
         return 0;
 
     std::size_t left = 0;
     std::size_t right = height.size() - 1;
-    qint best = 0;
+    int best = 0;
 
     while (left < right) {
-        const qint min_height = std::min(height[left], height[right]);
-        const qint width = static_cast<qint>(right - left);
+        const int min_height = std::min(height[left], height[right]);
+        const int width = static_cast<int>(right - left);
         best = std::max(best, min_height * width);
 
         if (height[left] < height[right])
@@ -119,6 +160,13 @@ inline qint container_with_most_water(const std::qvector<qint>& height) {
     }
 
     return best;
+}
+
+/// Quantum wrapper that measures inputs then lifts the area back into a qint.
+inline qint
+quantum_container_with_most_water(const std::qvector<qint>& height) {
+    const auto collapsed = detail::collapse_two_pointer_inputs(height);
+    return qint(container_with_most_water(collapsed));
 }
 
 /// Build a register representing a uniform superposition of pointer positions.
