@@ -1,0 +1,18 @@
+#pragma once
+
+#include <array>
+
+namespace std {
+
+/**
+ * @brief Alias exposing the standard fixed-size array as a quantum array.
+ *
+ * Providing this alias allows quantum-specific code to reference a qarray
+ * while reusing the optimised implementation of `std::array` and its
+ * compile-time size guarantees.
+ */
+template <typename T, std::size_t N>
+using qarray = std::array<T, N>;
+
+} // namespace std
+
