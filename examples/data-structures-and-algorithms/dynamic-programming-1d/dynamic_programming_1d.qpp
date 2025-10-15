@@ -7,50 +7,79 @@
 
 int main() {
     using namespace qpp::examples::dynamic_programming_1d;
+    using qpp::qdp::quantum_scalar;
+    using qpp::qdp::quantum_sequence;
+    using qpp::qdp::quantum_string;
+
+    auto print_state = [](const std::string& label, const qpp::qstruct& state) {
+        std::cout << label << " amplitudes: ";
+        for (const auto& amp : state.amplitude)
+            std::cout << '(' << amp.real() << ',' << amp.imag() << ") ";
+        std::cout << '\n';
+    };
 
     std::cout << "Dynamic Programming (1D) demonstrations\n";
     std::cout << "---------------------------------------\n";
 
-    std::cout << "climb_stairs(5) -> " << climb_stairs(5) << '\n';
+    const quantum_scalar<int> steps(5);
+    const auto climb_result = climb_stairs(steps);
+    std::cout << "climb_stairs(5) -> " << climb_result.value() << '\n';
+    print_state("climb_stairs quantum", climb_result.state());
 
-    const std::vector<int> robber_input{2, 7, 9, 3, 1};
-    std::cout << "house_robber([2,7,9,3,1]) -> " << house_robber(robber_input)
+    const quantum_sequence<int> robber_input{2, 7, 9, 3, 1};
+    const auto robber_answer = house_robber(robber_input);
+    std::cout << "house_robber([2,7,9,3,1]) -> " << robber_answer.value()
               << '\n';
-    const std::vector<int> robber_circle{1, 2, 3, 1};
+    print_state("house_robber quantum", robber_input.state());
+
+    const quantum_sequence<int> robber_circle{1, 2, 3, 1};
+    const auto robber_circle_answer = house_robber_ii(robber_circle);
     std::cout << "house_robber_ii([1,2,3,1]) -> "
-              << house_robber_ii(robber_circle) << '\n';
+              << robber_circle_answer.value() << '\n';
 
-    const std::string palindrome_input = "babad";
+    const quantum_string palindrome_input(std::string{"babad"});
+    const auto palindrome = longest_palindromic_substring(palindrome_input);
     std::cout << "longest_palindromic_substring('babad') -> '"
-              << longest_palindromic_substring(palindrome_input) << "'\n";
+              << palindrome.to_std_string() << "'\n";
+    print_state("palindrome quantum", palindrome.state());
+
+    const quantum_string palindrome_count_input(std::string{"aaa"});
+    const auto palindrome_count =
+        palindromic_substring_count(palindrome_count_input);
     std::cout << "palindromic_substring_count('aaa') -> "
-              << palindromic_substring_count("aaa") << '\n';
+              << palindrome_count.value() << '\n';
 
-    std::cout << "decode_ways('226') -> " << decode_ways("226") << '\n';
+    const quantum_string decode_input(std::string{"226"});
+    const auto decode_answer = decode_ways(decode_input);
+    std::cout << "decode_ways('226') -> " << decode_answer.value() << '\n';
 
-    const std::vector<int> coins{1, 2, 5};
-    std::cout << "coin_change([1,2,5], 11) -> " << coin_change(coins, 11)
+    const quantum_sequence<int> coins{1, 2, 5};
+    const auto coin_answer = coin_change(coins, quantum_scalar<int>(11));
+    std::cout << "coin_change([1,2,5], 11) -> " << coin_answer.value()
               << '\n';
 
-    const std::vector<int> product_input{2, 3, -2, 4};
+    const quantum_sequence<int> product_input{2, 3, -2, 4};
+    const auto product_answer = maximum_product_subarray(product_input);
     std::cout << "maximum_product_subarray([2,3,-2,4]) -> "
-              << maximum_product_subarray(product_input) << '\n';
+              << product_answer.value() << '\n';
 
-    const std::vector<std::string> dictionary{"leet", "code"};
+    const quantum_sequence<std::string> dictionary{"leet", "code"};
     std::cout << std::boolalpha;
     std::cout << "word_break('leetcode', ['leet','code']) -> "
-              << word_break("leetcode", dictionary) << '\n';
-    const qpp::pbool quantum_break =
-        quantum_word_break("leetcode", dictionary);
+              << word_break(quantum_string(std::string{"leetcode"}), dictionary)
+                     .value()
+              << '\n';
+    const qpp::pbool quantum_break = quantum_word_break(
+        quantum_string(std::string{"leetcode"}), dictionary);
     std::cout << std::noboolalpha;
     std::cout << std::fixed << std::setprecision(2);
     std::cout << "quantum_word_break probability -> "
               << quantum_break.probability() << '\n';
     std::cout.unsetf(std::ios::floatfield);
 
-    const std::vector<int> lis_input{10, 9, 2, 5, 3, 7, 101, 18};
+    const quantum_sequence<int> lis_input{10, 9, 2, 5, 3, 7, 101, 18};
     std::cout << "longest_increasing_subsequence([10,9,2,5,3,7,101,18]) -> "
-              << longest_increasing_subsequence(lis_input) << '\n';
+              << longest_increasing_subsequence(lis_input).value() << '\n';
 
     return 0;
 }

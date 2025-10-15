@@ -21,6 +21,12 @@ target_include_directories(test_worlds
 target_link_libraries(test_worlds PRIVATE qpp_quantum_worlds)
 add_test(NAME quantum_worlds COMMAND test_worlds)
 
+add_executable(test_dynamic_programming_quantum test_dynamic_programming_quantum.cpp)
+target_include_directories(test_dynamic_programming_quantum PRIVATE
+    ${CMAKE_CURRENT_LIST_DIR}/..
+)
+add_test(NAME dynamic_programming_quantum COMMAND test_dynamic_programming_quantum)
+
 option(QPP_ENABLE_HARDWARE_TESTS "Build tests requiring QPU backend" OFF)
 
 enable_testing()
