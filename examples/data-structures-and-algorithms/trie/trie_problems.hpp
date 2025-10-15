@@ -7,53 +7,66 @@
 #include <utility>
 #include <vector>
 
+#include "qpp/pbool.h"
+#include "qpp/qvector"
+
 namespace qpp::examples::trie {
 
-struct TrieNode {
-    std::array<std::unique_ptr<TrieNode>, 26> children{};
-    bool is_word{false};
+template <typename Node>
+using QuantumChildPtr = std::unique_ptr<Node>;
+
+template <typename Node, std::size_t N>
+using QuantumChildArray = std::array<QuantumChildPtr<Node>, N>;
+
+struct QuantumTrieNode {
+    QuantumChildArray<QuantumTrieNode, 26> children{};
+    qpp::pbool word_bias{0.0};
+
+    void mark_word(qpp::pbool bias = qpp::pbool{1.0}) { word_bias = std::move(bias); }
 };
 
-inline TrieNode* ensure_child(TrieNode& node, char letter) {
+inline QuantumTrieNode* ensure_child(QuantumTrieNode& node, char letter) {
     const auto index = static_cast<std::size_t>(letter - 'a');
     if (!node.children[index])
-        node.children[index] = std::make_unique<TrieNode>();
+        node.children[index] = std::make_unique<QuantumTrieNode>();
     return node.children[index].get();
 }
 
-inline TrieNode* find_child(TrieNode& node, char letter) {
+inline QuantumTrieNode* find_child(QuantumTrieNode& node, char letter) {
     const auto index = static_cast<std::size_t>(letter - 'a');
     return node.children[index] ? node.children[index].get() : nullptr;
 }
 
-inline const TrieNode* find_child(const TrieNode& node, char letter) {
+inline const QuantumTrieNode* find_child(const QuantumTrieNode& node, char letter) {
     const auto index = static_cast<std::size_t>(letter - 'a');
     return node.children[index] ? node.children[index].get() : nullptr;
 }
 
 class Trie {
   public:
-    Trie() : root_(std::make_unique<TrieNode>()) {}
+    Trie() : root_(std::make_unique<QuantumTrieNode>()) {}
 
     void insert(std::string_view word) {
         auto* current = root_.get();
         for (const auto letter : word) {
             current = ensure_child(*current, letter);
         }
-        current->is_word = true;
+        current->mark_word();
     }
 
-    [[nodiscard]] bool search(std::string_view word) const {
+    [[nodiscard]] qpp::pbool search(std::string_view word) const {
         const auto* node = find_node(word);
-        return node && node->is_word;
+        if (!node)
+            return qpp::pbool{0.0};
+        return node->word_bias;
     }
 
-    [[nodiscard]] bool starts_with(std::string_view prefix) const {
-        return find_node(prefix) != nullptr;
+    [[nodiscard]] qpp::pbool starts_with(std::string_view prefix) const {
+        return find_node(prefix) ? qpp::pbool{1.0} : qpp::pbool{0.0};
     }
 
   private:
-    [[nodiscard]] const TrieNode* find_node(std::string_view key) const {
+    [[nodiscard]] const QuantumTrieNode* find_node(std::string_view key) const {
         auto* current = root_.get();
         for (const auto letter : key) {
             current = find_child(*current, letter);
@@ -63,86 +76,102 @@ class Trie {
         return current;
     }
 
-    std::unique_ptr<TrieNode> root_;
+    std::unique_ptr<QuantumTrieNode> root_;
 };
 
 class WordDictionary {
   public:
-    WordDictionary() : root_(std::make_unique<TrieNode>()) {}
+    WordDictionary() : root_(std::make_unique<QuantumTrieNode>()) {}
 
     void add_word(std::string_view word) {
         auto* current = root_.get();
         for (const auto letter : word)
             current = ensure_child(*current, letter);
-        current->is_word = true;
+        current->mark_word();
     }
 
-    [[nodiscard]] bool search(std::string_view word) const {
+    [[nodiscard]] qpp::pbool search(std::string_view word) const {
         return search_recursive(root_.get(), word, 0);
     }
 
   private:
-    [[nodiscard]] bool search_recursive(const TrieNode* node, std::string_view word,
-                                        std::size_t index) const {
+    [[nodiscard]] qpp::pbool search_recursive(const QuantumTrieNode* node,
+                                              std::string_view word,
+                                              std::size_t index) const {
         if (!node)
-            return false;
+            return qpp::pbool{0.0};
 
         if (index == word.size())
-            return node->is_word;
+            return node->word_bias;
 
         const char letter = word[index];
         if (letter == '.') {
+            qpp::pbool result{0.0};
             for (const auto& child : node->children) {
-                if (child && search_recursive(child.get(), word, index + 1))
-                    return true;
+                if (child)
+                    result = result || search_recursive(child.get(), word, index + 1);
             }
-            return false;
+            return result;
         }
 
         const auto* next = find_child(*node, letter);
         return search_recursive(next, word, index + 1);
     }
 
-    std::unique_ptr<TrieNode> root_;
+    std::unique_ptr<QuantumTrieNode> root_;
 };
 
-struct WordSearchNode {
-    std::array<std::unique_ptr<WordSearchNode>, 26> children{};
+struct QuantumWordSearchNode {
+    QuantumChildArray<QuantumWordSearchNode, 26> children{};
     std::string word{};
+    qpp::pbool word_bias{0.0};
+
+    void set_word(std::string value) {
+        word = std::move(value);
+        word_bias = qpp::pbool{1.0};
+    }
+
+    void clear_word() {
+        word.clear();
+        word_bias = qpp::pbool{0.0};
+    }
 };
 
 class WordSearchTrie {
   public:
-    WordSearchTrie() : root_(std::make_unique<WordSearchNode>()) {}
+    WordSearchTrie() : root_(std::make_unique<QuantumWordSearchNode>()) {}
 
     void insert(const std::string& word) {
         auto* current = root_.get();
         for (const auto letter : word) {
             const auto index = static_cast<std::size_t>(letter - 'a');
             if (!current->children[index])
-                current->children[index] = std::make_unique<WordSearchNode>();
+                current->children[index] = std::make_unique<QuantumWordSearchNode>();
             current = current->children[index].get();
         }
-        current->word = word;
+        current->set_word(word);
     }
 
-    [[nodiscard]] WordSearchNode* root() const { return root_.get(); }
+    [[nodiscard]] QuantumWordSearchNode* root() const { return root_.get(); }
 
   private:
-    std::unique_ptr<WordSearchNode> root_;
+    std::unique_ptr<QuantumWordSearchNode> root_;
 };
 
-inline void dfs(std::vector<std::string>& board, int row, int col, WordSearchNode* node,
-                std::vector<std::string>& result) {
+inline void dfs(std::qvector<std::string>& board, int row, int col,
+                QuantumWordSearchNode* node, std::qvector<std::string>& result,
+                qpp::pbool path_bias = qpp::pbool{1.0}) {
     const char letter = board[row][col];
     const auto index = static_cast<std::size_t>(letter - 'a');
     auto* next = node->children[index].get();
     if (!next)
         return;
 
-    if (!next->word.empty()) {
+    const qpp::pbool next_bias = path_bias && next->word_bias;
+
+    if (!next->word.empty() && next_bias.probability() > 0.0) {
         result.push_back(next->word);
-        next->word.clear();
+        next->clear_word();
     }
 
     board[row][col] = '#';
@@ -155,14 +184,14 @@ inline void dfs(std::vector<std::string>& board, int row, int col, WordSearchNod
         if (next_row < 0 || next_row >= static_cast<int>(board.size()) || next_col < 0 ||
             next_col >= static_cast<int>(board.front().size()) || board[next_row][next_col] == '#')
             continue;
-        dfs(board, next_row, next_col, next, result);
+        dfs(board, next_row, next_col, next, result, next_bias);
     }
 
     board[row][col] = letter;
 }
 
-inline std::vector<std::string> word_search_ii(std::vector<std::string> board,
-                                               const std::vector<std::string>& words) {
+inline std::qvector<std::string> word_search_ii(
+    std::qvector<std::string> board, const std::qvector<std::string>& words) {
     if (board.empty() || board.front().empty() || words.empty())
         return {};
 
@@ -170,7 +199,7 @@ inline std::vector<std::string> word_search_ii(std::vector<std::string> board,
     for (const auto& word : words)
         trie.insert(word);
 
-    std::vector<std::string> result;
+    std::qvector<std::string> result;
     for (int row = 0; row < static_cast<int>(board.size()); ++row) {
         for (int col = 0; col < static_cast<int>(board.front().size()); ++col) {
             dfs(board, row, col, trie.root(), result);
