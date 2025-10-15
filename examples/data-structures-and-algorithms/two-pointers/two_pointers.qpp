@@ -1,6 +1,8 @@
+#include <array>
 #include <iomanip>
 #include <iostream>
 #include <string>
+#include <type_traits>
 #include <vector>
 
 #include "two_pointers.hpp"
@@ -38,6 +40,16 @@ int as_classical(const ::qint& value) {
 
 int main() {
     using namespace qpp::examples::two_pointers;
+
+    static_assert(std::is_same_v<decltype(three_sum(std::vector<int>{})),
+                                 std::vector<std::array<int, 3>>>);
+    static_assert(std::is_same_v<decltype(quantum_three_sum(std::qvector<::qint>{})),
+                                 std::vector<std::array<::qint, 3>>>);
+    static_assert(std::is_same_v<decltype(container_with_most_water(std::vector<int>{})),
+                                 int>);
+    static_assert(
+        std::is_same_v<decltype(quantum_container_with_most_water(std::qvector<::qint>{})),
+                       ::qint>);
 
     std::cout << std::boolalpha;
 
