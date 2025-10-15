@@ -1,5 +1,6 @@
 #pragma once
 
+#include <initializer_list>
 #include <memory>
 #include <queue>
 #include <sstream>
@@ -7,43 +8,93 @@
 #include <utility>
 #include <vector>
 
+#include "qpp/entangled_set"
+#include "qpp/qint"
+#include "qpp/qvector"
+
 namespace qpp::examples::linked_list {
 
 struct ListNode {
-    int value{};
+    qint value{};
     std::shared_ptr<ListNode> next{};
 };
 
 using NodePtr = std::shared_ptr<ListNode>;
 
-inline NodePtr make_node(int value, NodePtr next = nullptr) {
-    return std::make_shared<ListNode>(ListNode{value, std::move(next)});
+inline qint make_quantum_value(int classical) {
+    return qint{classical, classical, classical, classical};
 }
 
-inline NodePtr make_list(const std::vector<int>& values) {
+inline int collapse_value(const qint& value) {
+    const auto stats = value.measure_axis(0U);
+    if (stats.collapsed_value)
+        return *stats.collapsed_value;
+    return value.x_step()();
+}
+
+inline qint collapse_register(const qint& value) {
+    const auto register_stats = value.measure_register();
+    const auto fetch = [&](std::size_t axis, const qint::MeasurementHandle& handle) {
+        if (register_stats[axis].collapsed_value)
+            return *register_stats[axis].collapsed_value;
+        return handle();
+    };
+
+    const int x = fetch(0U, value.x_step());
+    const int y = fetch(1U, value.y_step());
+    const int z = fetch(2U, value.z_step());
+    const int t = fetch(3U, value.t_step());
+
+    return qint{x, y, z, t};
+}
+
+inline NodePtr make_node(qint value, NodePtr next = nullptr) {
+    return std::make_shared<ListNode>(ListNode{std::move(value), std::move(next)});
+}
+
+inline NodePtr make_node(int value, NodePtr next = nullptr) {
+    return make_node(make_quantum_value(value), std::move(next));
+}
+
+inline NodePtr make_list(std::qvector<qint> values) {
     if (values.empty())
         return nullptr;
 
-    NodePtr head = make_node(values.front());
+    NodePtr head = make_node(std::move(values.front()));
     auto current = head;
 
     for (std::size_t index = 1; index < values.size(); ++index) {
-        current->next = make_node(values[index]);
+        current->next = make_node(std::move(values[index]));
         current = current->next;
     }
 
     return head;
 }
 
-inline std::vector<int> to_vector(const NodePtr& head, std::size_t max_nodes = 64,
-                                  bool* truncated = nullptr) {
-    std::vector<int> values;
+inline NodePtr make_list(const std::vector<int>& values) {
+    std::qvector<qint> quantum_values;
+    quantum_values.reserve(values.size());
+    for (int value : values)
+        quantum_values.emplace_back(make_quantum_value(value));
+    return make_list(std::move(quantum_values));
+}
+
+inline NodePtr make_list(std::initializer_list<int> values) {
+    return make_list(std::vector<int>(values));
+}
+
+inline std::qvector<qint> to_vector(const NodePtr& head,
+                                    std::size_t max_nodes = 64,
+                                    bool* truncated = nullptr) {
+    std::qvector<qint> values;
     values.reserve(max_nodes);
 
+    std::entangled_set<const ListNode*> visited_nodes;
     auto current = head;
     std::size_t visited = 0;
-    while (current && visited < max_nodes) {
-        values.push_back(current->value);
+
+    while (current && visited < max_nodes && visited_nodes.insert(current.get()).second) {
+        values.emplace_back(collapse_register(current->value));
         current = current->next;
         ++visited;
     }
@@ -54,10 +105,21 @@ inline std::vector<int> to_vector(const NodePtr& head, std::size_t max_nodes = 6
     return values;
 }
 
+inline std::vector<int> to_classical_vector(const NodePtr& head,
+                                            std::size_t max_nodes = 64,
+                                            bool* truncated = nullptr) {
+    const auto quantum_values = to_vector(head, max_nodes, truncated);
+    std::vector<int> classical;
+    classical.reserve(quantum_values.size());
+    for (const auto& value : quantum_values)
+        classical.push_back(collapse_value(value));
+    return classical;
+}
+
 inline std::string describe_list(const NodePtr& head,
                                  std::size_t max_nodes = 16) {
     bool truncated = false;
-    const auto values = to_vector(head, max_nodes, &truncated);
+    const auto values = to_classical_vector(head, max_nodes, &truncated);
 
     std::ostringstream stream;
     stream << "[";
@@ -94,11 +156,11 @@ inline NodePtr merge_two_sorted_lists(NodePtr list1, NodePtr list2) {
     if (!list2)
         return list1;
 
-    auto dummy = make_node(0);
+    auto dummy = make_node(make_quantum_value(0));
     auto tail = dummy;
 
     while (list1 && list2) {
-        if (list1->value <= list2->value) {
+        if (collapse_value(list1->value) <= collapse_value(list2->value)) {
             tail->next = list1;
             tail = tail->next;
             list1 = list1->next;
@@ -160,7 +222,7 @@ inline NodePtr reorder_list(NodePtr head) {
 }
 
 inline NodePtr remove_nth_from_end(NodePtr head, int n) {
-    auto dummy = make_node(0, head);
+    auto dummy = make_node(make_quantum_value(0), head);
     auto lead = dummy;
 
     for (int step = 0; step < n && lead; ++step)
@@ -178,19 +240,19 @@ inline NodePtr remove_nth_from_end(NodePtr head, int n) {
     return dummy->next;
 }
 
-inline NodePtr merge_k_sorted_lists(std::vector<NodePtr> lists) {
+inline NodePtr merge_k_sorted_lists(std::qvector<NodePtr> lists) {
     struct NodePtrCompare {
         bool operator()(const NodePtr& lhs, const NodePtr& rhs) const {
-            return lhs->value > rhs->value;
+            return collapse_value(lhs->value) > collapse_value(rhs->value);
         }
     };
 
-    std::priority_queue<NodePtr, std::vector<NodePtr>, NodePtrCompare> heap;
+    std::priority_queue<NodePtr, std::qvector<NodePtr>, NodePtrCompare> heap;
     for (auto& list : lists)
         if (list)
             heap.push(list);
 
-    auto dummy = make_node(0);
+    auto dummy = make_node(make_quantum_value(0));
     auto tail = dummy;
 
     while (!heap.empty()) {

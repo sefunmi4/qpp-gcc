@@ -1,6 +1,8 @@
 #include <iostream>
 #include <vector>
 
+#include "qpp/qvector"
+
 #include "linked_list_problems.hpp"
 
 namespace {
@@ -10,9 +12,12 @@ using qpp::examples::linked_list::has_cycle;
 using qpp::examples::linked_list::make_list;
 using qpp::examples::linked_list::merge_k_sorted_lists;
 using qpp::examples::linked_list::merge_two_sorted_lists;
+using qpp::examples::linked_list::NodePtr;
 using qpp::examples::linked_list::remove_nth_from_end;
 using qpp::examples::linked_list::reorder_list;
 using qpp::examples::linked_list::reverse_list;
+using qpp::examples::linked_list::to_classical_vector;
+using qpp::examples::linked_list::to_vector;
 
 } // namespace
 
@@ -21,13 +26,31 @@ int main() {
     std::cout << "Reverse Linked List\n  before: "
               << describe_list(reverse_example) << '\n';
     reverse_example = reverse_list(reverse_example);
-    std::cout << "  after:  " << describe_list(reverse_example) << "\n\n";
+    std::cout << "  after:  " << describe_list(reverse_example) << '\n';
+    const auto reverse_quantum = to_vector(reverse_example);
+    const auto reverse_classical = to_classical_vector(reverse_example);
+    std::cout << "  qvector size: " << reverse_quantum.size() << '\n';
+    std::cout << "  measured values: ";
+    for (std::size_t i = 0; i < reverse_classical.size(); ++i) {
+        if (i > 0)
+            std::cout << ", ";
+        std::cout << reverse_classical[i];
+    }
+    std::cout << "\n\n";
 
     auto list_one = make_list({1, 3, 5});
     auto list_two = make_list({2, 4, 6});
     const auto merged_two = merge_two_sorted_lists(list_one, list_two);
     std::cout << "Merge Two Sorted Lists\n  result: "
-              << describe_list(merged_two) << "\n\n";
+              << describe_list(merged_two) << '\n';
+    const auto merged_two_classical = to_classical_vector(merged_two);
+    std::cout << "  measured merge: ";
+    for (std::size_t i = 0; i < merged_two_classical.size(); ++i) {
+        if (i > 0)
+            std::cout << ", ";
+        std::cout << merged_two_classical[i];
+    }
+    std::cout << "\n\n";
 
     auto cycle_example = make_list({1, 2, 3, 4});
     auto cycle_tail = cycle_example;
@@ -49,11 +72,19 @@ int main() {
     std::cout << "Remove Nth Node From End of List\n  result: "
               << describe_list(removal_example) << "\n\n";
 
-    std::vector merged_inputs{make_list({1, 4, 7}), make_list({2, 5, 8}),
-                              make_list({3, 6, 9})};
+    std::qvector<NodePtr> merged_inputs{
+        make_list({1, 4, 7}), make_list({2, 5, 8}), make_list({3, 6, 9})};
     const auto merged_k = merge_k_sorted_lists(merged_inputs);
     std::cout << "Merge K Sorted Lists\n  result: " << describe_list(merged_k)
-              << "\n";
+              << '\n';
+    const auto merged_k_classical = to_classical_vector(merged_k);
+    std::cout << "  measured merge: ";
+    for (std::size_t i = 0; i < merged_k_classical.size(); ++i) {
+        if (i > 0)
+            std::cout << ", ";
+        std::cout << merged_k_classical[i];
+    }
+    std::cout << "\n";
 
     return 0;
 }
