@@ -75,6 +75,14 @@ template <typename FetchSymbol>
 } // namespace detail
 
 
+/// Determine whether a bracket string contains a valid sequence of symbols.
+inline bool is_valid_parentheses(std::string_view s) {
+    return detail::validate_sequence(s.size(),
+                                     [s](std::size_t index) {
+                                         return s[index];
+                                     });
+}
+
 /// Determine whether a sequence of encoded bracket tokens is valid.
 inline bool is_valid_parentheses(const std::qvector<qint>& sequence) {
     return detail::validate_sequence(sequence.size(),
