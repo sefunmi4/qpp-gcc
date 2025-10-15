@@ -13,6 +13,14 @@
 
 namespace qpp::examples::binary_search {
 
+/// Collapse the logical axis that encodes the classical integer orientation.
+inline int measure_value(const qint& value) {
+    const auto stats = value.measure_axis(0U);
+    if (stats.collapsed_value)
+        return *stats.collapsed_value;
+    return value.x_step()();
+}
+
 /// Locate the minimum element of a rotated sorted array of qints.
 inline int find_min_in_rotated_sorted_array(const std::qvector<qint>& nums) {
     if (nums.empty())
@@ -20,20 +28,22 @@ inline int find_min_in_rotated_sorted_array(const std::qvector<qint>& nums) {
 
     int left = 0;
     int right = static_cast<int>(nums.size()) - 1;
-    int best = nums.front();
+    int best = measure_value(nums.front());
 
     while (left <= right) {
-        if (nums[static_cast<std::size_t>(left)] <=
-            nums[static_cast<std::size_t>(right)]) {
-            best = std::min(best, static_cast<int>(nums[static_cast<std::size_t>(left)]));
+        const int left_value = measure_value(nums[static_cast<std::size_t>(left)]);
+        const int right_value = measure_value(nums[static_cast<std::size_t>(right)]);
+
+        if (left_value <= right_value) {
+            best = std::min(best, left_value);
             break;
         }
 
         const int mid = left + (right - left) / 2;
-        const int mid_value = nums[static_cast<std::size_t>(mid)];
+        const int mid_value = measure_value(nums[static_cast<std::size_t>(mid)]);
         best = std::min(best, mid_value);
 
-        if (mid_value >= nums[static_cast<std::size_t>(left)])
+        if (mid_value >= left_value)
             left = mid + 1;
         else
             right = mid;
@@ -53,19 +63,21 @@ inline int search_in_rotated_sorted_array(const std::qvector<qint>& nums,
 
     while (left <= right) {
         const int mid = left + (right - left) / 2;
-        const int mid_value = nums[static_cast<std::size_t>(mid)];
+        const int mid_value = measure_value(nums[static_cast<std::size_t>(mid)]);
 
         if (mid_value == target)
             return mid;
 
-        if (nums[static_cast<std::size_t>(left)] <= mid_value) {
-            if (target >= nums[static_cast<std::size_t>(left)] && target < mid_value)
+        const int left_value = measure_value(nums[static_cast<std::size_t>(left)]);
+        const int right_value = measure_value(nums[static_cast<std::size_t>(right)]);
+
+        if (left_value <= mid_value) {
+            if (target >= left_value && target < mid_value)
                 right = mid - 1;
             else
                 left = mid + 1;
         } else {
-            if (target > mid_value &&
-                target <= nums[static_cast<std::size_t>(right)])
+            if (target > mid_value && target <= right_value)
                 left = mid + 1;
             else
                 right = mid - 1;
