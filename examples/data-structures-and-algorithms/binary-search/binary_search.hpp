@@ -1,6 +1,7 @@
 #pragma once
 
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <complex>
 #include <cstddef>
@@ -20,6 +21,36 @@ inline int measure_value(const qint& value) {
         return *stats.collapsed_value;
     return value.x_step()();
 }
+
+namespace detail {
+
+/// Measure every register component so downstream code can act on classical data.
+inline std::qvector<qint>
+collapse_rotated_array_inputs(const std::qvector<qint>& nums) {
+    std::qvector<qint> collapsed;
+    collapsed.reserve(nums.size());
+
+    for (const auto& value : nums) {
+        const auto register_stats = value.measure_register();
+        const auto fetch = [&](std::size_t axis,
+                               const qint::MeasurementHandle& handle) {
+            if (register_stats[axis].collapsed_value)
+                return *register_stats[axis].collapsed_value;
+            return handle();
+        };
+
+        const int x = fetch(0U, value.x_step());
+        const int y = fetch(1U, value.y_step());
+        const int z = fetch(2U, value.z_step());
+        const int t = fetch(3U, value.t_step());
+
+        collapsed.emplace_back(x, y, z, t);
+    }
+
+    return collapsed;
+}
+
+} // namespace detail
 
 /// Locate the minimum element of a rotated sorted array of qints.
 inline int find_min_in_rotated_sorted_array(const std::qvector<qint>& nums) {
@@ -85,6 +116,20 @@ inline int search_in_rotated_sorted_array(const std::qvector<qint>& nums,
     }
 
     return -1;
+}
+
+/// Quantum wrapper that collapses inputs before invoking the classical minimum search.
+inline int
+quantum_find_min_in_rotated_sorted_array(const std::qvector<qint>& nums) {
+    const auto collapsed = detail::collapse_rotated_array_inputs(nums);
+    return find_min_in_rotated_sorted_array(collapsed);
+}
+
+/// Quantum wrapper that measures inputs then delegates to the classical search routine.
+inline int quantum_search_in_rotated_sorted_array(const std::qvector<qint>& nums,
+                                                  int target) {
+    const auto collapsed = detail::collapse_rotated_array_inputs(nums);
+    return search_in_rotated_sorted_array(collapsed, target);
 }
 
 /// Probability of sampling the pivot when measuring a uniform rotation index state.
