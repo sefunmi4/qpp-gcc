@@ -2,16 +2,24 @@
 
 #include <algorithm>
 #include <cstddef>
+#include <functional>
 #include <stack>
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
 
+#include <qpp/entangled_set>
+#include <qpp/qvector>
+
 namespace qpp::examples::advanced_graphs {
 
-using Graph = std::unordered_map<char, std::unordered_set<char>>;
-using Indegrees = std::unordered_map<char, std::size_t>;
+using CharHash = std::hash<char>;
+using CharEqual = std::equal_to<char>;
+using CharSet = std::entangled_set<char, CharHash, CharEqual>;
+using CharDegreeMap = std::entangled_map<char, std::size_t, CharHash, CharEqual>;
+using Graph = std::entangled_map<char, CharSet, CharHash, CharEqual>;
+using Indegrees = CharDegreeMap;
 
 struct GraphAnalysis {
     Graph adjacency;
@@ -20,15 +28,15 @@ struct GraphAnalysis {
 };
 
 struct AlienDictionaryResult {
-    std::string order;
+    std::qvector<char> order;
     bool valid{true};
     bool has_cycle{false};
     bool has_prefix_conflict{false};
     bool is_unique{false};
-    std::vector<std::vector<char>> strongly_connected;
+    std::qvector<std::qvector<char>> strongly_connected;
 };
 
-inline GraphAnalysis build_dependency_graph(const std::vector<std::string>& words) {
+inline GraphAnalysis build_dependency_graph(const std::qvector<std::string>& words) {
     GraphAnalysis analysis{};
     auto& adjacency = analysis.adjacency;
     auto& indegree = analysis.indegree;
@@ -65,10 +73,10 @@ inline GraphAnalysis build_dependency_graph(const std::vector<std::string>& word
 }
 
 inline void tarjan_dfs(const Graph& graph, char node, std::size_t& index,
-                       std::unordered_map<char, std::size_t>& indices,
-                       std::unordered_map<char, std::size_t>& lowlinks,
-                       std::unordered_set<char>& on_stack, std::stack<char>& stack,
-                       std::vector<std::vector<char>>& components) {
+                       CharDegreeMap& indices,
+                       CharDegreeMap& lowlinks,
+                       CharSet& on_stack, std::stack<char>& stack,
+                       std::qvector<std::qvector<char>>& components) {
     indices[node] = index;
     lowlinks[node] = index;
     ++index;
@@ -87,7 +95,7 @@ inline void tarjan_dfs(const Graph& graph, char node, std::size_t& index,
     }
 
     if (lowlinks[node] == indices[node]) {
-        std::vector<char> component;
+        std::qvector<char> component;
         while (!stack.empty()) {
             const auto top = stack.top();
             stack.pop();
@@ -100,12 +108,12 @@ inline void tarjan_dfs(const Graph& graph, char node, std::size_t& index,
     }
 }
 
-inline std::vector<std::vector<char>> strongly_connected_components(const Graph& graph) {
-    std::unordered_map<char, std::size_t> indices;
-    std::unordered_map<char, std::size_t> lowlinks;
-    std::unordered_set<char> on_stack;
+inline std::qvector<std::qvector<char>> strongly_connected_components(const Graph& graph) {
+    CharDegreeMap indices;
+    CharDegreeMap lowlinks;
+    CharSet on_stack;
     std::stack<char> stack;
-    std::vector<std::vector<char>> components;
+    std::qvector<std::qvector<char>> components;
     std::size_t index = 0;
 
     for (const auto& [node, _] : graph) {
@@ -125,7 +133,7 @@ inline std::vector<std::vector<char>> strongly_connected_components(const Graph&
     return components;
 }
 
-inline AlienDictionaryResult alien_dictionary(const std::vector<std::string>& words) {
+inline AlienDictionaryResult alien_dictionary(const std::qvector<std::string>& words) {
     AlienDictionaryResult result{};
 
     const auto analysis = build_dependency_graph(words);
@@ -133,7 +141,7 @@ inline AlienDictionaryResult alien_dictionary(const std::vector<std::string>& wo
     result.strongly_connected = strongly_connected_components(analysis.adjacency);
 
     auto indegree = analysis.indegree;
-    std::vector<char> queue;
+    std::qvector<char> queue;
     for (const auto& [node, degree] : indegree) {
         if (degree == 0)
             queue.push_back(node);
@@ -171,7 +179,7 @@ inline AlienDictionaryResult alien_dictionary(const std::vector<std::string>& wo
     return result;
 }
 
-inline std::string describe_components(const std::vector<std::vector<char>>& components) {
+inline std::string describe_components(const std::qvector<std::qvector<char>>& components) {
     std::string description;
     bool first_component = true;
     for (const auto& component : components) {

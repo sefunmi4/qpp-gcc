@@ -1,6 +1,7 @@
 #include <iostream>
 #include <string>
-#include <vector>
+
+#include <qpp/qvector>
 
 #include "alien_dictionary.hpp"
 
@@ -8,7 +9,7 @@ using qpp::examples::advanced_graphs::alien_dictionary;
 using qpp::examples::advanced_graphs::describe_components;
 using qpp::examples::advanced_graphs::AlienDictionaryResult;
 
-void print_result(const std::vector<std::string>& words, const AlienDictionaryResult& result) {
+void print_result(const std::qvector<std::string>& words, const AlienDictionaryResult& result) {
     std::cout << "Words: [";
     for (std::size_t index = 0; index < words.size(); ++index) {
         if (index > 0)
@@ -24,17 +25,20 @@ void print_result(const std::vector<std::string>& words, const AlienDictionaryRe
     std::cout << "  strongly_connected: "
               << describe_components(result.strongly_connected) << '\n';
 
-    if (result.valid)
-        std::cout << "  derived order: " << result.order << "\n\n";
-    else
+    if (result.valid) {
+        std::cout << "  derived order: ";
+        for (const auto ch : result.order)
+            std::cout << ch;
+        std::cout << "\n\n";
+    } else
         std::cout << "  derived order: <invalid>\n\n";
 }
 
 int main() {
-    std::vector<std::string> canonical{"wrt", "wrf", "er", "ett", "rftt"};
-    std::vector<std::string> ambiguous{"z", "x", "a", "za"};
-    std::vector<std::string> cyclic{"z", "x", "z"};
-    std::vector<std::string> prefix_conflict{"abc", "ab"};
+    std::qvector<std::string> canonical{"wrt", "wrf", "er", "ett", "rftt"};
+    std::qvector<std::string> ambiguous{"z", "x", "a", "za"};
+    std::qvector<std::string> cyclic{"z", "x", "z"};
+    std::qvector<std::string> prefix_conflict{"abc", "ab"};
 
     print_result(canonical, alien_dictionary(canonical));
     print_result(ambiguous, alien_dictionary(ambiguous));
