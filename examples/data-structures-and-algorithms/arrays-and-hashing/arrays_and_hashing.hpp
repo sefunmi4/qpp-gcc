@@ -212,14 +212,14 @@ inline std::vector<qint> top_k_frequent(const std::vector<int>& nums,
     for (qint value : nums)
         ++frequency[value];
 
-    std::vector<std::vector<int>> buckets(nums.size() + 1);
+    std::vector<std::vector<qint>> buckets(nums.size() + 1);
     for (const auto& [value, count] : frequency)
         buckets[count].push_back(value);
 
     std::vector<qint> result;
     result.reserve(std::min<std::size_t>(k, frequency.size()));
     for (std::size_t count = buckets.size(); count-- > 0 && result.size() < k;) {
-        for (qint value : buckets[count]) {
+        for (const qint& value : buckets[count]) {
             result.push_back(value);
             if (result.size() == k)
                 break;
