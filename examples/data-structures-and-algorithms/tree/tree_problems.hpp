@@ -1,35 +1,63 @@
 #pragma once
 
 #include <algorithm>
+#include <initializer_list>
 #include <limits>
 #include <memory>
 #include <optional>
-#include <queue>
 #include <sstream>
 #include <string>
 #include <unordered_map>
 #include <utility>
-#include <vector>
+
+#include <qpp/qint>
+#include <qpp/qvector>
 
 namespace qpp::examples::tree {
 
+struct QuantumLabel {
+    qpp::qint state{};
+    int classical_value{};
+
+    QuantumLabel() = default;
+    QuantumLabel(qpp::qint quantum_state, int value)
+        : state{std::move(quantum_state)}, classical_value{value} {}
+
+    static QuantumLabel encode(int value) {
+        return QuantumLabel{qpp::qint{value, value, value, value}, value};
+    }
+
+    [[nodiscard]] int measure() const noexcept { return classical_value; }
+
+    friend bool operator==(const QuantumLabel& lhs, const QuantumLabel& rhs) noexcept {
+        return lhs.classical_value == rhs.classical_value;
+    }
+};
+
 struct TreeNode {
-    int value{};
+    QuantumLabel label{};
     std::shared_ptr<TreeNode> left{};
     std::shared_ptr<TreeNode> right{};
 };
 
 using NodePtr = std::shared_ptr<TreeNode>;
 
-inline NodePtr make_node(int value, NodePtr left = nullptr, NodePtr right = nullptr) {
-    return std::make_shared<TreeNode>(TreeNode{value, std::move(left), std::move(right)});
+inline NodePtr make_node(QuantumLabel label,
+                         NodePtr left = nullptr,
+                         NodePtr right = nullptr) {
+    return std::make_shared<TreeNode>(
+        TreeNode{std::move(label), std::move(left), std::move(right)});
 }
 
-inline NodePtr make_tree(const std::vector<std::optional<int>>& values) {
+inline NodePtr make_node(int value, NodePtr left = nullptr, NodePtr right = nullptr) {
+    return make_node(QuantumLabel::encode(value), std::move(left), std::move(right));
+}
+
+inline NodePtr make_tree(const std::qvector<std::optional<int>>& values) {
     if (values.empty() || !values.front())
         return nullptr;
 
-    std::vector<NodePtr> nodes(values.size());
+    std::qvector<NodePtr> nodes(values.size());
     nodes.front() = make_node(*values.front());
 
     for (std::size_t index = 0; index < values.size(); ++index) {
@@ -58,27 +86,30 @@ inline NodePtr make_tree(const std::vector<std::optional<int>>& values) {
     return nodes.front();
 }
 
+inline NodePtr make_tree(std::initializer_list<std::optional<int>> values) {
+    return make_tree(std::qvector<std::optional<int>>{values});
+}
+
 inline std::string serialize(const NodePtr& root) {
     if (!root)
         return "null";
 
     std::ostringstream stream;
-    std::queue<NodePtr> queue;
-    queue.push(root);
+    std::qvector<NodePtr> queue;
+    queue.push_back(root);
 
     bool first = true;
-    while (!queue.empty()) {
-        const auto node = queue.front();
-        queue.pop();
+    for (std::size_t index = 0; index < queue.size(); ++index) {
+        const auto node = queue[index];
 
         if (!first)
             stream << ',';
         first = false;
 
         if (node) {
-            stream << node->value;
-            queue.push(node->left);
-            queue.push(node->right);
+            stream << node->label.measure();
+            queue.push_back(node->left);
+            queue.push_back(node->right);
         } else {
             stream << '#';
         }
@@ -91,7 +122,7 @@ inline NodePtr deserialize(const std::string& data) {
     if (data == "null" || data.empty())
         return nullptr;
 
-    std::vector<std::optional<int>> values;
+    std::qvector<std::optional<int>> values;
     std::size_t start = 0;
     while (start <= data.size()) {
         const auto end = data.find(',', start);
@@ -111,17 +142,17 @@ inline NodePtr deserialize(const std::string& data) {
         return nullptr;
 
     NodePtr root = make_node(*values.front());
-    std::queue<NodePtr> queue;
-    queue.push(root);
+    std::qvector<NodePtr> queue;
+    queue.push_back(root);
 
     std::size_t index = 1;
-    while (!queue.empty() && index < values.size()) {
-        const auto current = queue.front();
-        queue.pop();
+    for (std::size_t queue_index = 0; queue_index < queue.size() && index < values.size();
+         ++queue_index) {
+        const auto current = queue[queue_index];
 
         if (values[index]) {
             current->left = make_node(*values[index]);
-            queue.push(current->left);
+            queue.push_back(current->left);
         }
         ++index;
         if (index >= values.size())
@@ -129,7 +160,7 @@ inline NodePtr deserialize(const std::string& data) {
 
         if (values[index]) {
             current->right = make_node(*values[index]);
-            queue.push(current->right);
+            queue.push_back(current->right);
         }
         ++index;
     }
@@ -158,7 +189,7 @@ inline bool same_tree(const NodePtr& left, const NodePtr& right) {
     if (!left || !right)
         return !left && !right;
 
-    return left->value == right->value && same_tree(left->left, right->left) &&
+    return left->label == right->label && same_tree(left->left, right->left) &&
            same_tree(left->right, right->right);
 }
 
@@ -176,9 +207,10 @@ inline bool is_subtree(const NodePtr& root, const NodePtr& sub) {
 
 inline NodePtr lowest_common_ancestor_bst(NodePtr root, int value1, int value2) {
     while (root) {
-        if (value1 < root->value && value2 < root->value) {
+        const int measured = root->label.measure();
+        if (value1 < measured && value2 < measured) {
             root = root->left;
-        } else if (value1 > root->value && value2 > root->value) {
+        } else if (value1 > measured && value2 > measured) {
             root = root->right;
         } else {
             return root;
@@ -188,28 +220,27 @@ inline NodePtr lowest_common_ancestor_bst(NodePtr root, int value1, int value2) 
     return nullptr;
 }
 
-inline std::vector<std::vector<int>> level_order(const NodePtr& root) {
-    std::vector<std::vector<int>> levels;
+inline std::qvector<std::qvector<int>> level_order(const NodePtr& root) {
+    std::qvector<std::qvector<int>> levels;
     if (!root)
         return levels;
 
-    std::queue<NodePtr> queue;
-    queue.push(root);
+    std::qvector<NodePtr> queue;
+    queue.push_back(root);
 
-    while (!queue.empty()) {
-        const auto size = queue.size();
-        std::vector<int> level;
+    for (std::size_t front = 0; front < queue.size();) {
+        const auto size = queue.size() - front;
+        std::qvector<int> level;
         level.reserve(size);
 
         for (std::size_t index = 0; index < size; ++index) {
-            const auto node = queue.front();
-            queue.pop();
-            level.push_back(node->value);
+            const auto node = queue[front++];
+            level.push_back(node->label.measure());
 
             if (node->left)
-                queue.push(node->left);
+                queue.push_back(node->left);
             if (node->right)
-                queue.push(node->right);
+                queue.push_back(node->right);
         }
 
         levels.push_back(std::move(level));
@@ -223,15 +254,16 @@ inline bool is_valid_bst(const NodePtr& root, std::optional<int> min = std::null
     if (!root)
         return true;
 
-    if ((min && root->value <= *min) || (max && root->value >= *max))
+    const int value = root->label.measure();
+    if ((min && value <= *min) || (max && value >= *max))
         return false;
 
-    return is_valid_bst(root->left, min, root->value) &&
-           is_valid_bst(root->right, root->value, max);
+    return is_valid_bst(root->left, min, value) &&
+           is_valid_bst(root->right, value, max);
 }
 
 inline std::optional<int> kth_smallest(const NodePtr& root, int k) {
-    std::vector<NodePtr> stack;
+    std::qvector<NodePtr> stack;
     auto current = root;
     int count = 0;
 
@@ -245,7 +277,7 @@ inline std::optional<int> kth_smallest(const NodePtr& root, int k) {
         stack.pop_back();
         ++count;
         if (count == k)
-            return current->value;
+            return current->label.measure();
 
         current = current->right;
     }
@@ -253,7 +285,8 @@ inline std::optional<int> kth_smallest(const NodePtr& root, int k) {
     return std::nullopt;
 }
 
-inline NodePtr build_tree_impl(const std::vector<int>& preorder, std::size_t pre_left,
+inline NodePtr build_tree_impl(const std::qvector<int>& preorder,
+                               std::size_t pre_left,
                                std::size_t pre_right,
                                const std::unordered_map<int, std::size_t>& inorder_index,
                                std::size_t in_left) {
@@ -274,7 +307,7 @@ inline NodePtr build_tree_impl(const std::vector<int>& preorder, std::size_t pre
     return root;
 }
 
-inline NodePtr build_tree(const std::vector<int>& preorder, const std::vector<int>& inorder) {
+inline NodePtr build_tree(const std::qvector<int>& preorder, const std::qvector<int>& inorder) {
     if (preorder.size() != inorder.size() || preorder.empty())
         return nullptr;
 
@@ -293,8 +326,9 @@ inline int max_path_sum_impl(const NodePtr& node, int& best) {
     const int left_gain = std::max(0, max_path_sum_impl(node->left, best));
     const int right_gain = std::max(0, max_path_sum_impl(node->right, best));
 
-    best = std::max(best, node->value + left_gain + right_gain);
-    return node->value + std::max(left_gain, right_gain);
+    const int value = node->label.measure();
+    best = std::max(best, value + left_gain + right_gain);
+    return value + std::max(left_gain, right_gain);
 }
 
 inline int max_path_sum(const NodePtr& root) {
@@ -303,7 +337,7 @@ inline int max_path_sum(const NodePtr& root) {
     return best;
 }
 
-inline std::string describe_levels(const std::vector<std::vector<int>>& levels) {
+inline std::string describe_levels(const std::qvector<std::qvector<int>>& levels) {
     std::ostringstream stream;
     stream << '[';
     for (std::size_t level_index = 0; level_index < levels.size(); ++level_index) {
