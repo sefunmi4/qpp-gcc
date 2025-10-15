@@ -9,12 +9,15 @@ int main() {
     std::cout << "Dynamic Programming (2D) demonstrations\n";
     std::cout << "-------------------------------------\n";
 
-    std::cout << "unique_paths(3, 7) -> " << unique_paths(3, 7) << '\n';
+    const auto unique_result = unique_paths(3, 7);
+    std::cout << "unique_paths(3, 7) probability -> "
+              << unique_result.probability() << '\n';
 
     const std::string first = "abcde";
     const std::string second = "ace";
+    const auto lcs = longest_common_subsequence(first, second);
     std::cout << "longest_common_subsequence('" << first << "', '" << second
-              << "') -> '" << longest_common_subsequence(first, second) << "'\n";
+              << "') -> '" << lcs.to_std_string() << "'\n";
 
     return 0;
 }
