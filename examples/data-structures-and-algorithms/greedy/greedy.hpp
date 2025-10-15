@@ -6,7 +6,9 @@
 #include <cmath>
 #include <vector>
 
+#include "qpp/qint"
 #include "qpp/qstruct.hpp"
+#include "qpp/qvector"
 
 namespace qpp::examples::greedy {
 
