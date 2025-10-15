@@ -93,6 +93,11 @@ inline bool is_valid_parentheses(const std::qvector<qint>& sequence) {
                                      });
 }
 
+/// Convenience wrapper that mirrors the quantum-prefixed API used by the sample.
+inline bool quantum_is_valid_parentheses(const std::qvector<qint>& sequence) {
+    return is_valid_parentheses(sequence);
+}
+
 /// Express confidence in the validity of the provided bracket string.
 inline qpp::pbool parentheses_confidence(std::string_view s) {
     return qpp::pbool{is_valid_parentheses(s) ? 1.0 : 0.0};
