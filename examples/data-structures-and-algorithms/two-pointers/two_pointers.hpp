@@ -85,6 +85,18 @@ collapse_two_pointer_inputs(const std::qvector<qint>& values) {
     return collapsed;
 }
 
+/// Lift a classical integer into a fresh quantum register with aligned axes.
+inline qint make_quantum_value(int classical) {
+    return qint{classical, classical, classical, classical};
+}
+
+/// Transform a classical triplet into its quantum representation.
+inline std::array<qint, 3>
+lift_three_sum_triplet(const std::array<int, 3>& triplet) {
+    return {make_quantum_value(triplet[0]), make_quantum_value(triplet[1]),
+            make_quantum_value(triplet[2])};
+}
+
 } // namespace detail
 
 /// Enumerate all unique triplets that sum to zero over classical integers.
@@ -125,16 +137,17 @@ inline std::vector<std::array<int, 3>> three_sum(std::vector<int> nums) {
 }
 
 /// Enumerate all unique triplets that sum to zero for quantum integers by
-/// measuring inputs and lifting the classical results back into qints.
-inline std::vector<std::array<qint, 3>>
+/// measuring inputs and lifting the classical results back into quantum
+/// registers.
+inline std::qvector<std::array<qint, 3>>
 quantum_three_sum(const std::qvector<qint>& nums) {
     const auto collapsed = detail::collapse_two_pointer_inputs(nums);
     const auto classical = three_sum(collapsed);
 
-    std::vector<std::array<qint, 3>> lifted;
+    std::qvector<std::array<qint, 3>> lifted;
     lifted.reserve(classical.size());
     for (const auto& triplet : classical)
-        lifted.push_back({qint(triplet[0]), qint(triplet[1]), qint(triplet[2])});
+        lifted.push_back(detail::lift_three_sum_triplet(triplet));
 
     return lifted;
 }
@@ -162,11 +175,12 @@ inline int container_with_most_water(const std::vector<int>& height) {
     return best;
 }
 
-/// Quantum wrapper that measures inputs then lifts the area back into a qint.
+/// Quantum wrapper that measures inputs then lifts the area back into a
+/// freshly-allocated quantum register.
 inline qint
 quantum_container_with_most_water(const std::qvector<qint>& height) {
     const auto collapsed = detail::collapse_two_pointer_inputs(height);
-    return qint(container_with_most_water(collapsed));
+    return detail::make_quantum_value(container_with_most_water(collapsed));
 }
 
 /// Build a register representing a uniform superposition of pointer positions.
