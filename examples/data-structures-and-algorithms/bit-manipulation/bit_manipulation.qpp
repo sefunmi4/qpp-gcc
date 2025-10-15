@@ -67,7 +67,7 @@ int main() {
     expect_equal("quantum reverse_bits nibble", expected_nibble, quantum_reversed_nibble,
                  all_passed);
 
-    const auto classical_counts = counting_bits(5);
+    const auto classical_counts = classical_counting_bits(5);
     std::cout << "counting_bits(5) -> [";
     for (std::size_t i = 0; i < classical_counts.size(); ++i) {
         std::cout << classical_counts[i];
@@ -75,7 +75,7 @@ int main() {
             std::cout << ", ";
     }
     std::cout << "]\n";
-    const auto quantum_counts = quantum_counting_bits(5);
+    const auto quantum_counts = counting_bits(5);
     bool counts_match = classical_counts.size() == quantum_counts.size();
     std::vector<int> collapsed_quantum_counts;
     collapsed_quantum_counts.reserve(quantum_counts.size());
@@ -85,7 +85,7 @@ int main() {
         if (counts_match && classical_counts[i] != collapsed)
             counts_match = false;
     }
-    std::cout << "quantum_counting_bits(5) -> [";
+    std::cout << "counting_bits(5) quantum -> [";
     for (std::size_t i = 0; i < collapsed_quantum_counts.size(); ++i) {
         std::cout << collapsed_quantum_counts[i];
         if (i + 1 != collapsed_quantum_counts.size())
@@ -93,6 +93,17 @@ int main() {
     }
     std::cout << "]\n";
     expect_equal("quantum counting_bits sequence", true, counts_match, all_passed);
+
+    bool exact_match = counts_match && (classical_counts.size() == collapsed_quantum_counts.size());
+    for (std::size_t i = 0; exact_match && i < classical_counts.size(); ++i) {
+        const auto expected_quantum = make_quantum_from_int(classical_counts[i]);
+        const auto& actual_quantum = quantum_counts[i];
+        if (collapse_quantum_to_int(actual_quantum) !=
+            collapse_quantum_to_int(expected_quantum)) {
+            exact_match = false;
+        }
+    }
+    expect_equal("quantum counting_bits qint contents", true, exact_match, all_passed);
 
     const std::vector<int> missing_input{3, 0, 1};
     const int classical_missing = missing_number(missing_input);

@@ -113,7 +113,7 @@ inline int hamming_weight(const qint& value) {
 }
 
 /// Compute population counts for the range [0, n] (classical).
-inline std::vector<int> counting_bits(int n) {
+inline std::vector<int> classical_counting_bits(int n) {
     if (n < 0)
         return {};
 
@@ -125,8 +125,14 @@ inline std::vector<int> counting_bits(int n) {
 }
 
 /// Compute population counts for the range [0, n] and encode them as quantum integers.
+inline std::qvector<qint> counting_bits(int n) {
+    const auto classical_counts = classical_counting_bits(n);
+    return detail::build_vector(classical_counts);
+}
+
+/// Compute population counts for the range [0, n] and encode them as quantum integers.
 inline std::qvector<qint> quantum_counting_bits(int n) {
-    return detail::build_vector(counting_bits(n));
+    return counting_bits(n);
 }
 
 /// Reverse the bits of a 32-bit classical value.
