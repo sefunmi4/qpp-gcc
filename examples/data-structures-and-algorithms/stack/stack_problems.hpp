@@ -16,6 +16,29 @@ namespace detail {
 
 constexpr std::array<char, 6> kBracketSymbols{'(', ')', '[', ']', '{', '}'};
 
+// Each bracket token is mapped onto a unique set of axis orientations so that a
+// qint can faithfully round-trip through encode/decode operations. The mapping
+// is intentionally documented here to keep the classical reference helpers and
+// the quantum-facing implementation in sync:
+//
+//   * The x-axis distinguishes opening (-1) from closing (+1) brackets.
+//   * The y- and z-axes identify the bracket family:
+//       - Parentheses  -> (y = -1, z = -1)
+//       - Square       -> (y = +1, z = -1)
+//       - Curly        -> (y = -1, z = +1)
+//   * The t-axis remains fixed at -1 for every symbol to maintain a consistent
+//     orientation history in the legacy backend.
+//
+// This layout yields six distinct patterns—one for each supported bracket
+// symbol—while using only three measurement axes for classification.
+constexpr std::array<std::array<int, 4>, kBracketSymbols.size()>
+    kBracketAxisEncodings{{{{-1, -1, -1, -1}},  // '('
+                           {{+1, -1, -1, -1}},  // ')'
+                           {{-1, +1, -1, -1}},  // '['
+                           {{+1, +1, -1, -1}},  // ']'
+                           {{-1, -1, +1, -1}},  // '{'
+                           {{+1, -1, +1, -1}}}}; // '}'
+
 [[nodiscard]] constexpr bool is_open_symbol(char symbol) noexcept {
     return symbol == '(' || symbol == '[' || symbol == '{';
 }
@@ -39,6 +62,23 @@ constexpr std::array<char, 6> kBracketSymbols{'(', ')', '[', ']', '{', '}'};
         if (kBracketSymbols[index] == symbol)
             return static_cast<int>(index);
     return -1;
+}
+
+[[nodiscard]] constexpr const std::array<int, 4>&
+axes_for_token(std::size_t token) noexcept {
+    return kBracketAxisEncodings[token];
+}
+
+[[nodiscard]] inline int decode_token_from_axes(const std::array<int, 4>& axes) {
+    for (std::size_t index = 0; index < kBracketAxisEncodings.size(); ++index)
+        if (kBracketAxisEncodings[index] == axes)
+            return static_cast<int>(index);
+    return -1;
+}
+
+[[nodiscard]] inline std::array<int, 4> sample_axes(const qint& value) {
+    return {value.x_step().sample(), value.y_step().sample(),
+            value.z_step().sample(), value.t_step().sample()};
 }
 
 [[nodiscard]] constexpr char decode_symbol(int token) noexcept {
@@ -87,8 +127,11 @@ inline bool is_valid_parentheses(std::string_view s) {
 inline bool is_valid_parentheses(const std::qvector<qint>& sequence) {
     return detail::validate_sequence(sequence.size(),
                                      [&](std::size_t index) {
+                                         const auto measured_axes =
+                                             detail::sample_axes(sequence[index]);
                                          const int token =
-                                             static_cast<int>(sequence[index]);
+                                             detail::decode_token_from_axes(
+                                                 measured_axes);
                                          return detail::decode_symbol(token);
                                      });
 }
@@ -113,7 +156,9 @@ inline std::qvector<qint> encode_parentheses_sequence(std::string_view s) {
         if (token < 0)
             throw std::invalid_argument(
                 "encode_parentheses_sequence: unsupported bracket symbol");
-        encoded.emplace_back(token);
+        const auto& axes =
+            detail::axes_for_token(static_cast<std::size_t>(token));
+        encoded.emplace_back(axes[0], axes[1], axes[2], axes[3]);
     }
 
     return encoded;
@@ -125,7 +170,9 @@ inline std::string decode_parentheses_sequence(const std::qvector<qint>& sequenc
     decoded.reserve(sequence.size());
 
     for (const auto& token : sequence) {
-        const char symbol = detail::decode_symbol(static_cast<int>(token));
+        const auto measured_axes = detail::sample_axes(token);
+        const int decoded_token = detail::decode_token_from_axes(measured_axes);
+        const char symbol = detail::decode_symbol(decoded_token);
         if (!detail::is_supported_symbol(symbol))
             throw std::invalid_argument(
                 "decode_parentheses_sequence: invalid bracket token");
