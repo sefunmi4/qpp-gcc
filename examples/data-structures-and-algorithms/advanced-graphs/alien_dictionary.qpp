@@ -1,20 +1,22 @@
 #include <iostream>
 #include <string>
+#include <vector>
 
 #include <qpp/qvector>
 
 #include "alien_dictionary.hpp"
 
 using qpp::examples::advanced_graphs::alien_dictionary;
-using qpp::examples::advanced_graphs::describe_components;
 using qpp::examples::advanced_graphs::AlienDictionaryResult;
 
 void print_result(const std::qvector<std::string>& words, const AlienDictionaryResult& result) {
+    std::vector<std::string> classical_words(words.begin(), words.end());
+
     std::cout << "Words: [";
-    for (std::size_t index = 0; index < words.size(); ++index) {
+    for (std::size_t index = 0; index < classical_words.size(); ++index) {
         if (index > 0)
             std::cout << ", ";
-        std::cout << words[index];
+        std::cout << classical_words[index];
     }
     std::cout << "]\n";
 
@@ -22,14 +24,37 @@ void print_result(const std::qvector<std::string>& words, const AlienDictionaryR
     std::cout << "  has_cycle: " << result.has_cycle << '\n';
     std::cout << "  prefix_conflict: " << result.has_prefix_conflict << '\n';
     std::cout << "  unique_order: " << result.is_unique << '\n';
+    std::vector<std::vector<char>> classical_components;
+    classical_components.reserve(result.strongly_connected.size());
+    for (const auto& component : result.strongly_connected)
+        classical_components.emplace_back(component.begin(), component.end());
+
+    auto describe_classical = [](const std::vector<std::vector<char>>& components) {
+        std::string description;
+        bool first_component = true;
+        for (const auto& component : components) {
+            if (!first_component)
+                description += " | ";
+            first_component = false;
+            description.push_back('[');
+            bool first = true;
+            for (const auto node : component) {
+                if (!first)
+                    description.push_back(',');
+                first = false;
+                description.push_back(node);
+            }
+            description.push_back(']');
+        }
+        return description;
+    };
+
     std::cout << "  strongly_connected: "
-              << describe_components(result.strongly_connected) << '\n';
+              << describe_classical(classical_components) << '\n';
 
     if (result.valid) {
-        std::cout << "  derived order: ";
-        for (const auto ch : result.order)
-            std::cout << ch;
-        std::cout << "\n\n";
+        std::string classical_order(result.order.begin(), result.order.end());
+        std::cout << "  derived order: " << classical_order << "\n\n";
     } else
         std::cout << "  derived order: <invalid>\n\n";
 }
