@@ -88,16 +88,18 @@ int main() {
 
     std::cout << std::boolalpha;
 
-    const std::qvector<::qint> quantum_duplicate_input{
-        ::qint{1, -1, 1, -1},
-        ::qint{-3, 5, -7, 9},
-        ::qint{1, -1, 1, -1},
+    const auto to_quantum = [](const std::vector<int>& classical_values) {
+        std::qvector<::qint> quantum_values;
+        quantum_values.reserve(classical_values.size());
+        for (int value : classical_values)
+            quantum_values.emplace_back(::qint{value, value, value, value});
+        return quantum_values;
     };
-    const std::qvector<::qint> quantum_unique_input{
-        ::qint{-2, -2, -2, -2},
-        ::qint{4, 0, 4, 0},
-        ::qint{7, 7, -3, -3},
-    };
+
+    const std::vector<int> duplicate_input_values{1, -3, 1};
+    const std::vector<int> unique_input_values{-2, 4, 7};
+    const auto quantum_duplicate_input = to_quantum(duplicate_input_values);
+    const auto quantum_unique_input = to_quantum(unique_input_values);
     std::cout << "contains_duplicates([...duplicate...]) -> "
               << contains_duplicates(quantum_duplicate_input) << '\n';
     std::cout << "contains_duplicates([...unique...]) -> "
@@ -106,7 +108,9 @@ int main() {
     std::cout << "valid_anagram('listen','silent') -> "
               << valid_anagram("listen", "silent") << '\n';
 
-    const std::pair<int, int> sum_indices = two_sum({2, 7, 11, 15}, 9);
+    const std::vector<int> two_sum_values{2, 7, 11, 15};
+    const auto quantum_two_sum_input = to_quantum(two_sum_values);
+    const std::pair<int, int> sum_indices = two_sum(quantum_two_sum_input, 9);
     std::cout << "two_sum([2,7,11,15], 9) -> (" << sum_indices.first << ", "
               << sum_indices.second << ")\n";
 
@@ -130,7 +134,7 @@ int main() {
     for (std::size_t i = 0; i < top_two.size(); ++i) {
         if (i)
             std::cout << ", ";
-        std::cout << top_two[i];
+        std::cout << qpp::examples::arrays_and_hashing::detail::collapse_to_scalar(top_two[i]);
     }
     std::cout << "]\n";
 
@@ -147,7 +151,8 @@ int main() {
     std::cout << "]\n";
 
     const std::vector<int> products_input{1, 2, 3, 4};
-    const auto products = product_except_self(products_input);
+    const auto quantum_products_input = to_quantum(products_input);
+    const auto products = product_except_self(quantum_products_input);
     std::cout << "product_except_self([1,2,3,4]) -> [";
     for (std::size_t i = 0; i < products.size(); ++i) {
         if (i)
@@ -157,8 +162,12 @@ int main() {
     std::cout << "]\n";
 
     const std::vector<int> sequence_input{100, 4, 200, 1, 3, 2};
+    const auto quantum_sequence_input = to_quantum(sequence_input);
+    const ::qint longest_sequence = quantum_longest_consecutive(quantum_sequence_input);
+    const int collapsed_longest =
+        qpp::examples::arrays_and_hashing::detail::collapse_to_scalar(longest_sequence);
     std::cout << "longest_consecutive([100,4,200,1,3,2]) -> "
-              << longest_consecutive(sequence_input) << "\n\n";
+              << collapsed_longest << "\n\n";
 
     // Quantum-flavoured demonstrations
     const std::vector<int> bit_pattern{1, 0, 1, 1};
