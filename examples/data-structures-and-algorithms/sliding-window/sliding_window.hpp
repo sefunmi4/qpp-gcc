@@ -11,7 +11,9 @@
 
 #include "qpp/pbool.h"
 #include "qpp/qarray"
+#include "qpp/qint"
 #include "qpp/qstruct.hpp"
+#include "qpp/qvector"
 
 namespace qpp::examples::sliding_window {
 
