@@ -1,7 +1,6 @@
 #pragma once
 
 #include <algorithm>
-#include <array>
 #include <cmath>
 #include <complex>
 #include <cstddef>
@@ -11,6 +10,7 @@
 #include <vector>
 
 #include "qpp/pbool.h"
+#include "qpp/qarray"
 #include "qpp/qstruct.hpp"
 
 namespace qpp::examples::sliding_window {
