@@ -1,7 +1,10 @@
+#include <functional>
 #include <iostream>
 #include <memory>
-#include <unordered_set>
 #include <vector>
+
+#include <qpp/entangled_set>
+#include <qpp/qvector>
 
 #include "graph_problems.hpp"
 
@@ -15,7 +18,9 @@ using qpp::examples::graph::count_islands;
 using qpp::examples::graph::is_valid_tree;
 using qpp::examples::graph::pacific_atlantic;
 
-void delete_graph(Node* node, std::unordered_set<Node*>& seen) {
+using NodeSet = std::entangled_set<Node*, std::hash<Node*>, std::equal_to<Node*>>;
+
+void delete_graph(Node* node, NodeSet& seen) {
     if (!node || !seen.insert(node).second)
         return;
 
@@ -26,21 +31,21 @@ void delete_graph(Node* node, std::unordered_set<Node*>& seen) {
 }
 
 void delete_graph(Node* node) {
-    std::unordered_set<Node*> seen;
+    NodeSet seen;
     delete_graph(node, seen);
 }
 
 } // namespace
 
 int main() {
-    const std::vector<std::vector<char>> island_grid{{'1', '1', '0', '0', '0'},
-                                                     {'1', '1', '0', '0', '0'},
-                                                     {'0', '0', '1', '0', '0'},
-                                                     {'0', '0', '0', '1', '1'}};
+    const std::qvector<std::qvector<char>> island_grid{{'1', '1', '0', '0', '0'},
+                                                       {'1', '1', '0', '0', '0'},
+                                                       {'0', '0', '1', '0', '0'},
+                                                       {'0', '0', '0', '1', '1'}};
     std::cout << "Number of Islands\n  count: " << count_islands(island_grid)
               << "\n\n";
 
-    std::vector<std::unique_ptr<Node>> original;
+    std::qvector<std::unique_ptr<Node>> original;
     for (int value = 1; value <= 4; ++value)
         original.push_back(std::make_unique<Node>(Node{value, {}}));
 
@@ -52,35 +57,39 @@ int main() {
     Node* cloned = clone_graph(original[0].get());
     std::cout << "Clone Graph\n  root value: " << cloned->value << '\n';
     std::cout << "  neighbor values:";
-    for (Node* neighbor : cloned->neighbors)
+    const std::vector<Node*> classical_neighbors{cloned->neighbors.begin(),
+                                                 cloned->neighbors.end()};
+    for (Node* neighbor : classical_neighbors)
         std::cout << ' ' << neighbor->value;
     std::cout << "\n\n";
     delete_graph(cloned);
 
-    const std::vector<std::vector<int>> heights{{1, 2, 2, 3, 5},
-                                                {3, 2, 3, 4, 4},
-                                                {2, 4, 5, 3, 1},
-                                                {6, 7, 1, 4, 5},
-                                                {5, 1, 1, 2, 4}};
+    const std::qvector<std::qvector<int>> heights{{1, 2, 2, 3, 5},
+                                                  {3, 2, 3, 4, 4},
+                                                  {2, 4, 5, 3, 1},
+                                                  {6, 7, 1, 4, 5},
+                                                  {5, 1, 1, 2, 4}};
     const auto reachable = pacific_atlantic(heights);
+    const std::vector<std::pair<int, int>> classical_reachable{reachable.begin(),
+                                                               reachable.end()};
     std::cout << "Pacific Atlantic Water Flow\n  reachable cells:";
-    for (const auto& [row, col] : reachable)
+    for (const auto& [row, col] : classical_reachable)
         std::cout << " (" << row << ", " << col << ')';
     std::cout << "\n\n";
 
-    const std::vector<std::pair<int, int>> prerequisites{{1, 0}, {2, 1},
-                                                         {3, 2}};
+    const std::qvector<std::pair<int, int>> prerequisites{{1, 0}, {2, 1},
+                                                           {3, 2}};
     std::cout << std::boolalpha;
     std::cout << "Course Schedule\n  can_finish: "
               << can_finish_courses(4, prerequisites) << "\n\n";
 
-    const std::vector<std::pair<int, int>> tree_edges{{0, 1}, {0, 2},
-                                                      {0, 3}, {1, 4}};
+    const std::qvector<std::pair<int, int>> tree_edges{{0, 1}, {0, 2},
+                                                       {0, 3}, {1, 4}};
     std::cout << "Graph Valid Tree\n  is_tree: "
               << is_valid_tree(5, tree_edges) << "\n\n";
 
-    const std::vector<std::pair<int, int>> component_edges{{0, 1}, {1, 2},
-                                                           {3, 4}};
+    const std::qvector<std::pair<int, int>> component_edges{{0, 1}, {1, 2},
+                                                            {3, 4}};
     std::cout << "Number of Connected Components\n  components: "
               << count_components(5, component_edges) << '\n';
 
