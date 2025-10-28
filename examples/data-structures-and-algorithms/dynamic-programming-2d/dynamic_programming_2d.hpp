@@ -21,7 +21,7 @@ inline qpp::pbool unique_paths(int m, int n) {
     if (m <= 0 || n <= 0)
         return qpp::pbool{0.0};
 
-    std::qvector<int> dp(static_cast<std::size_t>(n), 1);
+    qpp::qvector<int> dp(static_cast<std::size_t>(n), 1);
     for (int row = 1; row < m; ++row) {
         for (int col = 1; col < n; ++col)
             dp[static_cast<std::size_t>(col)] +=
@@ -50,7 +50,7 @@ longest_common_subsequence(std::string_view first, std::string_view second) {
     const std::size_t rows = first.size();
     const std::size_t cols = second.size();
 
-    std::qvector<qpp::qdp::quantum_sequence<int>> dp;
+    qpp::qvector<qpp::qdp::quantum_sequence<int>> dp;
     dp.reserve(rows + 1);
     for (std::size_t i = 0; i <= rows; ++i)
         dp.emplace_back(cols + 1, 0);

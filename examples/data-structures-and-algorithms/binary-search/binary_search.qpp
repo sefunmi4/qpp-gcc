@@ -39,7 +39,7 @@ int main() {
     std::cout << "search_in_rotated_sorted_array([4,5,6,7,0,1,2], 3) -> "
               << search_in_rotated_sorted_array(rotated, 3) << "\n";
 
-    const std::qvector<::qint> quantum_rotated{4, 5, 6, 7, 0, 1, 2};
+    const qpp::qvector<::qint> quantum_rotated{4, 5, 6, 7, 0, 1, 2};
     std::cout << "quantum_find_min_in_rotated_sorted_array([4,5,6,7,0,1,2]) -> "
               << quantum_find_min_in_rotated_sorted_array(quantum_rotated) << "\n";
     std::cout << "quantum_search_in_rotated_sorted_array([4,5,6,7,0,1,2], 6) -> "

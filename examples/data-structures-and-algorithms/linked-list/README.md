@@ -2,7 +2,7 @@
 
 This example upgrades the classical linked list exercises to operate on the
 project's quantum data structures.  Each node stores a [`qint`](../../../include/qpp/qint)
-payload and traversal utilities return `std::qvector` containers so that
+payload and traversal utilities return `qpp::qvector` containers so that
 algorithms can remain quantum-aware while still collapsing values for
 presentation.
 

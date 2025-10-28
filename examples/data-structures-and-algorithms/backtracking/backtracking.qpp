@@ -7,7 +7,7 @@
 
 namespace {
 
-void print_combinations(const std::qvector<std::qvector<int>>& combos) {
+void print_combinations(const qpp::qvector<qpp::qvector<int>>& combos) {
     std::cout << "Found " << combos.size() << " combinations:\n";
     for (const auto& combo : combos) {
         std::cout << "  [";
@@ -20,7 +20,7 @@ void print_combinations(const std::qvector<std::qvector<int>>& combos) {
     }
 }
 
-void print_board(const std::qvector<std::qvector<char>>& board) {
+void print_board(const qpp::qvector<qpp::qvector<char>>& board) {
     std::cout << "Board:\n";
     for (const auto& row : board) {
         for (char cell : row)
@@ -34,13 +34,13 @@ void print_board(const std::qvector<std::qvector<char>>& board) {
 int main() {
     using namespace qpp::examples::backtracking;
 
-    const std::qvector<int> candidates{2, 3, 6, 7};
+    const qpp::qvector<int> candidates{2, 3, 6, 7};
     const int target = 7;
     std::cout << "combination_sum([2,3,6,7], 7)\n";
     auto combos = combination_sum(candidates, target);
     print_combinations(combos);
 
-    std::qvector<std::qvector<char>> board{{'A', 'B', 'C', 'E'},
+    qpp::qvector<qpp::qvector<char>> board{{'A', 'B', 'C', 'E'},
                                            {'S', 'F', 'C', 'S'},
                                            {'A', 'D', 'E', 'E'}};
     print_board(board);

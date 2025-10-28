@@ -9,7 +9,7 @@
 using qpp::examples::advanced_graphs::alien_dictionary;
 using qpp::examples::advanced_graphs::AlienDictionaryResult;
 
-void print_result(const std::qvector<std::string>& words, const AlienDictionaryResult& result) {
+void print_result(const qpp::qvector<std::string>& words, const AlienDictionaryResult& result) {
     std::vector<std::string> classical_words(words.begin(), words.end());
 
     std::cout << "Words: [";
@@ -60,10 +60,10 @@ void print_result(const std::qvector<std::string>& words, const AlienDictionaryR
 }
 
 int main() {
-    std::qvector<std::string> canonical{"wrt", "wrf", "er", "ett", "rftt"};
-    std::qvector<std::string> ambiguous{"z", "x", "a", "za"};
-    std::qvector<std::string> cyclic{"z", "x", "z"};
-    std::qvector<std::string> prefix_conflict{"abc", "ab"};
+    qpp::qvector<std::string> canonical{"wrt", "wrf", "er", "ett", "rftt"};
+    qpp::qvector<std::string> ambiguous{"z", "x", "a", "za"};
+    qpp::qvector<std::string> cyclic{"z", "x", "z"};
+    qpp::qvector<std::string> prefix_conflict{"abc", "ab"};
 
     print_result(canonical, alien_dictionary(canonical));
     print_result(ambiguous, alien_dictionary(ambiguous));

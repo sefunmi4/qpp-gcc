@@ -130,7 +130,7 @@ private:
 ///     Bottle neck
 
 /// Return true when the input contains any duplicate values.
-inline bool contains_duplicates(const std::qvector<qint>& list) {
+inline bool contains_duplicates(const qpp::qvector<qint>& list) {
     std::entangled_set<int> visited;
     visited.reserve(list.size());
     for (const auto& item : list) {
@@ -164,7 +164,7 @@ inline bool valid_anagram(std::string_view s, std::string_view t) {
 }
 
 /// Return the indices of two quantum values whose collapsed scalars sum to the target.
-inline std::pair<int, int> two_sum(const std::qvector<qint>& nums,
+inline std::pair<int, int> two_sum(const qpp::qvector<qint>& nums,
                                            int target) {
     int value = 0;
     int complement = 0;
@@ -266,17 +266,17 @@ inline std::vector<std::string> decode(const std::string& data) {
 
 
 /// Collapse each quantum value to a scalar and compute the product excluding each index.
-inline std::qvector<int> product_except_self(const std::qvector<qint>& nums) {
+inline qpp::qvector<int> product_except_self(const qpp::qvector<qint>& nums) {
     const std::size_t n = nums.size();
     if (n == 0)
         return {};
 
-    std::qvector<int> classical_values;
+    qpp::qvector<int> classical_values;
     classical_values.reserve(n);
     for (const auto& value : nums)
         classical_values.push_back(detail::collapse_to_scalar(value));
 
-    std::qvector<int> result(n, 1);
+    qpp::qvector<int> result(n, 1);
     int prefix = 1;
     for (std::size_t i = 0; i < n; ++i) {
         result[i] = prefix;

@@ -89,7 +89,7 @@ int main() {
     std::cout << std::boolalpha;
 
     const auto to_quantum = [](const std::vector<int>& classical_values) {
-        std::qvector<::qint> quantum_values;
+        qpp::qvector<::qint> quantum_values;
         quantum_values.reserve(classical_values.size());
         for (int value : classical_values)
             quantum_values.emplace_back(::qint{value, value, value, value});

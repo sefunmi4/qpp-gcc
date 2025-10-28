@@ -25,9 +25,9 @@ inline int measure_value(const qint& value) {
 namespace detail {
 
 /// Measure every register component so downstream code can act on classical data.
-inline std::qvector<qint>
-collapse_rotated_array_inputs(const std::qvector<qint>& nums) {
-    std::qvector<qint> collapsed;
+inline qpp::qvector<qint>
+collapse_rotated_array_inputs(const qpp::qvector<qint>& nums) {
+    qpp::qvector<qint> collapsed;
     collapsed.reserve(nums.size());
 
     for (const auto& value : nums) {
@@ -53,7 +53,7 @@ collapse_rotated_array_inputs(const std::qvector<qint>& nums) {
 } // namespace detail
 
 /// Locate the minimum element of a rotated sorted array of qints.
-inline int find_min_in_rotated_sorted_array(const std::qvector<qint>& nums) {
+inline int find_min_in_rotated_sorted_array(const qpp::qvector<qint>& nums) {
     if (nums.empty())
         return 0;
 
@@ -84,7 +84,7 @@ inline int find_min_in_rotated_sorted_array(const std::qvector<qint>& nums) {
 }
 
 /// Search for a target element in a rotated sorted array of qints.
-inline int search_in_rotated_sorted_array(const std::qvector<qint>& nums,
+inline int search_in_rotated_sorted_array(const qpp::qvector<qint>& nums,
                                                   int target) {
     if (nums.empty())
         return -1;
@@ -120,13 +120,13 @@ inline int search_in_rotated_sorted_array(const std::qvector<qint>& nums,
 
 /// Quantum wrapper that collapses inputs before invoking the classical minimum search.
 inline int
-quantum_find_min_in_rotated_sorted_array(const std::qvector<qint>& nums) {
+quantum_find_min_in_rotated_sorted_array(const qpp::qvector<qint>& nums) {
     const auto collapsed = detail::collapse_rotated_array_inputs(nums);
     return find_min_in_rotated_sorted_array(collapsed);
 }
 
 /// Quantum wrapper that measures inputs then delegates to the classical search routine.
-inline int quantum_search_in_rotated_sorted_array(const std::qvector<qint>& nums,
+inline int quantum_search_in_rotated_sorted_array(const qpp::qvector<qint>& nums,
                                                   int target) {
     const auto collapsed = detail::collapse_rotated_array_inputs(nums);
     return search_in_rotated_sorted_array(collapsed, target);

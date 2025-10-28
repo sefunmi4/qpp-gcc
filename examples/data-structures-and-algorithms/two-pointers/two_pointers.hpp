@@ -75,7 +75,7 @@ namespace detail {
 
 /// Measure each value to obtain classical integers for downstream processing.
 inline std::vector<int>
-collapse_two_pointer_inputs(const std::qvector<qint>& values) {
+collapse_two_pointer_inputs(const qpp::qvector<qint>& values) {
     std::vector<int> collapsed;
     collapsed.reserve(values.size());
 
@@ -139,12 +139,12 @@ inline std::vector<std::array<int, 3>> three_sum(std::vector<int> nums) {
 /// Enumerate all unique triplets that sum to zero for quantum integers by
 /// measuring inputs and lifting the classical results back into quantum
 /// registers.
-inline std::qvector<std::array<qint, 3>>
-quantum_three_sum(const std::qvector<qint>& nums) {
+inline qpp::qvector<std::array<qint, 3>>
+quantum_three_sum(const qpp::qvector<qint>& nums) {
     const auto collapsed = detail::collapse_two_pointer_inputs(nums);
     const auto classical = three_sum(collapsed);
 
-    std::qvector<std::array<qint, 3>> lifted;
+    qpp::qvector<std::array<qint, 3>> lifted;
     lifted.reserve(classical.size());
     for (const auto& triplet : classical)
         lifted.push_back(detail::lift_three_sum_triplet(triplet));
@@ -178,7 +178,7 @@ inline int container_with_most_water(const std::vector<int>& height) {
 /// Quantum wrapper that measures inputs then lifts the area back into a
 /// freshly-allocated quantum register.
 inline qint
-quantum_container_with_most_water(const std::qvector<qint>& height) {
+quantum_container_with_most_water(const qpp::qvector<qint>& height) {
     const auto collapsed = detail::collapse_two_pointer_inputs(height);
     return detail::make_quantum_value(container_with_most_water(collapsed));
 }

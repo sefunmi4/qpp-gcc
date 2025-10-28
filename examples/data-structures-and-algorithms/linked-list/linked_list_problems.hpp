@@ -56,7 +56,7 @@ inline NodePtr make_node(int value, NodePtr next = nullptr) {
     return make_node(make_quantum_value(value), std::move(next));
 }
 
-inline NodePtr make_list(std::qvector<qint> values) {
+inline NodePtr make_list(qpp::qvector<qint> values) {
     if (values.empty())
         return nullptr;
 
@@ -72,7 +72,7 @@ inline NodePtr make_list(std::qvector<qint> values) {
 }
 
 inline NodePtr make_list(const std::vector<int>& values) {
-    std::qvector<qint> quantum_values;
+    qpp::qvector<qint> quantum_values;
     quantum_values.reserve(values.size());
     for (int value : values)
         quantum_values.emplace_back(make_quantum_value(value));
@@ -83,10 +83,10 @@ inline NodePtr make_list(std::initializer_list<int> values) {
     return make_list(std::vector<int>(values));
 }
 
-inline std::qvector<qint> to_vector(const NodePtr& head,
+inline qpp::qvector<qint> to_vector(const NodePtr& head,
                                     std::size_t max_nodes = 64,
                                     bool* truncated = nullptr) {
-    std::qvector<qint> values;
+    qpp::qvector<qint> values;
     values.reserve(max_nodes);
 
     std::entangled_set<const ListNode*> visited_nodes;
@@ -240,14 +240,14 @@ inline NodePtr remove_nth_from_end(NodePtr head, int n) {
     return dummy->next;
 }
 
-inline NodePtr merge_k_sorted_lists(std::qvector<NodePtr> lists) {
+inline NodePtr merge_k_sorted_lists(qpp::qvector<NodePtr> lists) {
     struct NodePtrCompare {
         bool operator()(const NodePtr& lhs, const NodePtr& rhs) const {
             return collapse_value(lhs->value) > collapse_value(rhs->value);
         }
     };
 
-    std::priority_queue<NodePtr, std::qvector<NodePtr>, NodePtrCompare> heap;
+    std::priority_queue<NodePtr, qpp::qvector<NodePtr>, NodePtrCompare> heap;
     for (auto& list : lists)
         if (list)
             heap.push(list);

@@ -43,12 +43,12 @@ int main() {
 
     static_assert(std::is_same_v<decltype(three_sum(std::vector<int>{})),
                                  std::vector<std::array<int, 3>>>);
-    static_assert(std::is_same_v<decltype(quantum_three_sum(std::qvector<::qint>{})),
-                                 std::qvector<std::array<::qint, 3>>>);
+    static_assert(std::is_same_v<decltype(quantum_three_sum(qpp::qvector<::qint>{})),
+                                 qpp::qvector<std::array<::qint, 3>>>);
     static_assert(std::is_same_v<decltype(container_with_most_water(std::vector<int>{})),
                                  int>);
     static_assert(
-        std::is_same_v<decltype(quantum_container_with_most_water(std::qvector<::qint>{})),
+        std::is_same_v<decltype(quantum_container_with_most_water(qpp::qvector<::qint>{})),
                        ::qint>);
 
     std::cout << std::boolalpha;
@@ -76,7 +76,7 @@ int main() {
                   << "]\n";
     }
 
-    const std::qvector<::qint> quantum_nums{
+    const qpp::qvector<::qint> quantum_nums{
         static_cast<::qint>(-1),
         static_cast<::qint>(0),
         static_cast<::qint>(1),
@@ -96,7 +96,7 @@ int main() {
     std::cout << "container_with_most_water([1,8,6,2,5,4,8,3,7]) -> "
               << container_with_most_water(heights) << '\n';
 
-    const std::qvector<::qint> quantum_heights{
+    const qpp::qvector<::qint> quantum_heights{
         static_cast<::qint>(1),
         static_cast<::qint>(8),
         static_cast<::qint>(6),

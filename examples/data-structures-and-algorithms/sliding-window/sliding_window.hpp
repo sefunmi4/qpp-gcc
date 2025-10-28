@@ -19,7 +19,7 @@ namespace qpp::examples::sliding_window {
 
 
 /// Compute the maximum profit achievable with a single buy/sell transaction.
-inline qint best_time_to_buy_and_sell_stock(const std::qvector<qint>& prices) {
+inline qint best_time_to_buy_and_sell_stock(const qpp::qvector<qint>& prices) {
     qint best_profit = 0;
     qint cheapest_so_far = std::numeric_limits<qint>::max();
     for (qint price : prices) {

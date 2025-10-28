@@ -49,8 +49,8 @@ int main() {
     print_bias("search(\"b..\")", dictionary.search("b.."));
     std::cout << '\n';
 
-    std::qvector<std::string> board{"oaan", "etae", "ihkr", "iflv"};
-    const std::qvector<std::string> words{"oath", "pea", "eat", "rain"};
+    qpp::qvector<std::string> board{"oaan", "etae", "ihkr", "iflv"};
+    const qpp::qvector<std::string> words{"oath", "pea", "eat", "rain"};
     auto found = word_search_ii(board, words);
     std::sort(found.begin(), found.end());
 

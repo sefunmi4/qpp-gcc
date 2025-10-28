@@ -158,8 +158,8 @@ class WordSearchTrie {
     std::unique_ptr<QuantumWordSearchNode> root_;
 };
 
-inline void dfs(std::qvector<std::string>& board, int row, int col,
-                QuantumWordSearchNode* node, std::qvector<std::string>& result,
+inline void dfs(qpp::qvector<std::string>& board, int row, int col,
+                QuantumWordSearchNode* node, qpp::qvector<std::string>& result,
                 qpp::pbool path_bias = qpp::pbool{1.0}) {
     const char letter = board[row][col];
     const auto index = static_cast<std::size_t>(letter - 'a');
@@ -190,8 +190,8 @@ inline void dfs(std::qvector<std::string>& board, int row, int col,
     board[row][col] = letter;
 }
 
-inline std::qvector<std::string> word_search_ii(
-    std::qvector<std::string> board, const std::qvector<std::string>& words) {
+inline qpp::qvector<std::string> word_search_ii(
+    qpp::qvector<std::string> board, const qpp::qvector<std::string>& words) {
     if (board.empty() || board.front().empty() || words.empty())
         return {};
 
@@ -199,7 +199,7 @@ inline std::qvector<std::string> word_search_ii(
     for (const auto& word : words)
         trie.insert(word);
 
-    std::qvector<std::string> result;
+    qpp::qvector<std::string> result;
     for (int row = 0; row < static_cast<int>(board.size()); ++row) {
         for (int col = 0; col < static_cast<int>(board.front().size()); ++col) {
             dfs(board, row, col, trie.root(), result);

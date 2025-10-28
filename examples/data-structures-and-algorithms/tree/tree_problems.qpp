@@ -50,8 +50,8 @@ int main() {
     std::cout << "Kth Smallest Element in a BST\n  k=3: "
               << (kth ? std::to_string(*kth) : std::string{"not found"}) << "\n\n";
 
-    const std::qvector<int> preorder{3, 9, 20, 15, 7};
-    const std::qvector<int> inorder{9, 3, 15, 20, 7};
+    const qpp::qvector<int> preorder{3, 9, 20, 15, 7};
+    const qpp::qvector<int> inorder{9, 3, 15, 20, 7};
     auto constructed = build_tree(preorder, inorder);
     std::cout << "Construct Binary Tree From Preorder and Inorder Traversal\n  levels: "
               << describe_levels(level_order(constructed)) << "\n\n";
