@@ -1,18 +1,320 @@
 #pragma once
 
+#include <initializer_list>
+#include <iterator>
+#include <type_traits>
+#include <utility>
 #include <vector>
+
+#include "qpp/detail/quantum_container_bookkeeping.hpp"
 
 namespace std {
 
-/**
- * @brief Alias exposing the standard dynamic array as a quantum vector.
- *
- * Providing this alias allows quantum-specific code to reference a qvector
- * while reusing the optimised implementation of `std::vector` and its
- * allocator-aware interface.
- */
-template <typename T, typename Allocator = std::allocator<T>>
-using qvector = std::vector<T, Allocator>;
+template <typename T, typename Allocator = std::allocator<T>> class qvector {
+    using storage_type = std::vector<T, Allocator>;
+
+public:
+    using value_type = typename storage_type::value_type;
+    using allocator_type = typename storage_type::allocator_type;
+    using size_type = typename storage_type::size_type;
+    using difference_type = typename storage_type::difference_type;
+    using reference = typename storage_type::reference;
+    using const_reference = typename storage_type::const_reference;
+    using pointer = typename storage_type::pointer;
+    using const_pointer = typename storage_type::const_pointer;
+    using iterator = typename storage_type::iterator;
+    using const_iterator = typename storage_type::const_iterator;
+    using reverse_iterator = typename storage_type::reverse_iterator;
+    using const_reverse_iterator = typename storage_type::const_reverse_iterator;
+
+    qvector() = default;
+
+    explicit qvector(const allocator_type& alloc) : data_(alloc) { sync_quantum_state(); }
+
+    explicit qvector(size_type count, const allocator_type& alloc = allocator_type())
+        : data_(count, T{}, alloc) {
+        sync_quantum_state();
+    }
+
+    qvector(size_type count, const T& value, const allocator_type& alloc = allocator_type())
+        : data_(count, value, alloc) {
+        sync_quantum_state();
+    }
+
+    template <typename InputIt,
+              typename = std::enable_if_t<!std::is_integral<InputIt>::value>>
+    qvector(InputIt first, InputIt last, const allocator_type& alloc = allocator_type())
+        : data_(first, last, alloc) {
+        sync_quantum_state();
+    }
+
+    qvector(std::initializer_list<T> init, const allocator_type& alloc = allocator_type())
+        : data_(init, alloc) {
+        sync_quantum_state();
+    }
+
+    qvector(const storage_type& classical) : data_(classical) { sync_quantum_state(); }
+
+    qvector(storage_type&& classical) noexcept(std::is_nothrow_move_constructible<storage_type>::value)
+        : data_(std::move(classical)) {
+        sync_quantum_state();
+    }
+
+    qvector(const qvector& other) = default;
+    qvector(qvector&& other) noexcept = default;
+
+    qvector& operator=(const qvector& other) {
+        if (this != &other) {
+            data_ = other.data_;
+            bookkeeping_ = other.bookkeeping_;
+            sync_quantum_state();
+        }
+        return *this;
+    }
+
+    qvector& operator=(qvector&& other) noexcept(std::is_nothrow_move_assignable<storage_type>::value) {
+        if (this != &other) {
+            data_ = std::move(other.data_);
+            bookkeeping_ = std::move(other.bookkeeping_);
+            sync_quantum_state();
+        }
+        return *this;
+    }
+
+    qvector& operator=(std::initializer_list<T> init) {
+        data_ = init;
+        bookkeeping_.mark_dirty();
+        sync_quantum_state();
+        return *this;
+    }
+
+    void assign(size_type count, const T& value) {
+        data_.assign(count, value);
+        bookkeeping_.mark_dirty();
+    }
+
+    template <typename InputIt,
+              typename = std::enable_if_t<!std::is_integral<InputIt>::value>>
+    void assign(InputIt first, InputIt last) {
+        data_.assign(first, last);
+        bookkeeping_.mark_dirty();
+    }
+
+    void assign(std::initializer_list<T> init) {
+        data_.assign(init.begin(), init.end());
+        bookkeeping_.mark_dirty();
+    }
+
+    allocator_type get_allocator() const noexcept { return data_.get_allocator(); }
+
+    reference at(size_type pos) {
+        bookkeeping_.mark_dirty();
+        return data_.at(pos);
+    }
+
+    const_reference at(size_type pos) const { return data_.at(pos); }
+
+    reference operator[](size_type pos) {
+        bookkeeping_.mark_dirty();
+        return data_[pos];
+    }
+
+    const_reference operator[](size_type pos) const { return data_[pos]; }
+
+    reference front() {
+        bookkeeping_.mark_dirty();
+        return data_.front();
+    }
+
+    const_reference front() const { return data_.front(); }
+
+    reference back() {
+        bookkeeping_.mark_dirty();
+        return data_.back();
+    }
+
+    const_reference back() const { return data_.back(); }
+
+    pointer data() noexcept {
+        bookkeeping_.mark_dirty();
+        return data_.data();
+    }
+
+    const_pointer data() const noexcept { return data_.data(); }
+
+    iterator begin() noexcept {
+        bookkeeping_.mark_dirty();
+        return data_.begin();
+    }
+
+    const_iterator begin() const noexcept { return data_.begin(); }
+    const_iterator cbegin() const noexcept { return data_.cbegin(); }
+
+    iterator end() noexcept {
+        bookkeeping_.mark_dirty();
+        return data_.end();
+    }
+
+    const_iterator end() const noexcept { return data_.end(); }
+    const_iterator cend() const noexcept { return data_.cend(); }
+
+    reverse_iterator rbegin() noexcept {
+        bookkeeping_.mark_dirty();
+        return data_.rbegin();
+    }
+
+    const_reverse_iterator rbegin() const noexcept { return data_.rbegin(); }
+    const_reverse_iterator crbegin() const noexcept { return data_.crbegin(); }
+
+    reverse_iterator rend() noexcept {
+        bookkeeping_.mark_dirty();
+        return data_.rend();
+    }
+
+    const_reverse_iterator rend() const noexcept { return data_.rend(); }
+    const_reverse_iterator crend() const noexcept { return data_.crend(); }
+
+    bool empty() const noexcept { return data_.empty(); }
+    size_type size() const noexcept { return data_.size(); }
+    size_type max_size() const noexcept { return data_.max_size(); }
+
+    void reserve(size_type new_cap) {
+        data_.reserve(new_cap);
+        bookkeeping_.mark_dirty();
+    }
+
+    size_type capacity() const noexcept { return data_.capacity(); }
+
+    void shrink_to_fit() {
+        data_.shrink_to_fit();
+        bookkeeping_.mark_dirty();
+    }
+
+    void clear() noexcept {
+        data_.clear();
+        bookkeeping_.mark_dirty();
+    }
+
+    iterator insert(const_iterator pos, const T& value) {
+        auto it = data_.insert(pos, value);
+        bookkeeping_.mark_dirty();
+        return it;
+    }
+
+    iterator insert(const_iterator pos, T&& value) {
+        auto it = data_.insert(pos, std::move(value));
+        bookkeeping_.mark_dirty();
+        return it;
+    }
+
+    iterator insert(const_iterator pos, size_type count, const T& value) {
+        auto it = data_.insert(pos, count, value);
+        bookkeeping_.mark_dirty();
+        return it;
+    }
+
+    template <typename InputIt,
+              typename = std::enable_if_t<!std::is_integral<InputIt>::value>>
+    iterator insert(const_iterator pos, InputIt first, InputIt last) {
+        auto it = data_.insert(pos, first, last);
+        bookkeeping_.mark_dirty();
+        return it;
+    }
+
+    iterator insert(const_iterator pos, std::initializer_list<T> init) {
+        auto it = data_.insert(pos, init.begin(), init.end());
+        bookkeeping_.mark_dirty();
+        return it;
+    }
+
+    template <typename... Args> reference emplace_back(Args&&... args) {
+        bookkeeping_.mark_dirty();
+        return data_.emplace_back(std::forward<Args>(args)...);
+    }
+
+    template <typename... Args> iterator emplace(const_iterator pos, Args&&... args) {
+        auto it = data_.emplace(pos, std::forward<Args>(args)...);
+        bookkeeping_.mark_dirty();
+        return it;
+    }
+
+    void push_back(const T& value) {
+        data_.push_back(value);
+        bookkeeping_.mark_dirty();
+    }
+
+    void push_back(T&& value) {
+        data_.push_back(std::move(value));
+        bookkeeping_.mark_dirty();
+    }
+
+    void pop_back() {
+        data_.pop_back();
+        bookkeeping_.mark_dirty();
+    }
+
+    iterator erase(const_iterator pos) {
+        auto it = data_.erase(pos);
+        bookkeeping_.mark_dirty();
+        return it;
+    }
+
+    iterator erase(const_iterator first, const_iterator last) {
+        auto it = data_.erase(first, last);
+        bookkeeping_.mark_dirty();
+        return it;
+    }
+
+    void resize(size_type count) {
+        data_.resize(count);
+        bookkeeping_.mark_dirty();
+    }
+
+    void resize(size_type count, const value_type& value) {
+        data_.resize(count, value);
+        bookkeeping_.mark_dirty();
+    }
+
+    void swap(qvector& other) noexcept(
+        noexcept(std::declval<storage_type&>().swap(std::declval<storage_type&>()))) {
+        using std::swap;
+        swap(data_, other.data_);
+        bookkeeping_.swap(other.bookkeeping_);
+    }
+
+    friend void swap(qvector& lhs, qvector& rhs) noexcept(noexcept(lhs.swap(rhs))) {
+        lhs.swap(rhs);
+    }
+
+    storage_type& classical() noexcept {
+        bookkeeping_.mark_dirty();
+        return data_;
+    }
+
+    const storage_type& classical() const noexcept { return data_; }
+
+    void mark_measured() const noexcept { bookkeeping_.note_measurement(); }
+
+    std::size_t measurement_epoch() const noexcept { return bookkeeping_.measurement_version(); }
+
+    std::size_t entanglement_epoch() const {
+        sync_quantum_state();
+        return bookkeeping_.entanglement_version();
+    }
+
+    const qpp::qstruct& quantum_state() const {
+        sync_quantum_state();
+        return bookkeeping_.amplitude();
+    }
+
+private:
+    void sync_quantum_state() const {
+        bookkeeping_.ensure_amplitude(data_.begin(), data_.end());
+    }
+
+    storage_type data_{};
+    mutable qpp::detail::quantum_container::propagation_state bookkeeping_{};
+};
 
 } // namespace std
 

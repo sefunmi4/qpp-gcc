@@ -217,6 +217,91 @@ int main(){
         out = self.compile_and_run(code, 'qint_classical_measure')
         self.assertEqual(out, 'ok')
 
+    def test_qarray_initialization_and_state(self):
+        code = r"""#include <array>
+#include <cmath>
+#include <iostream>
+#include "qpp/qarray"
+
+int main() {
+    const std::array<int, 3> classical{{1, 2, 3}};
+    std::qarray<int, 3> quantum(classical);
+    const auto& state = quantum.quantum_state();
+    if (state.amplitude.size() != 4)
+        return 1;
+    const double normaliser = std::sqrt(14.0);
+    bool ok = true;
+    ok &= std::abs(state.amplitude[0].real() - (1.0 / normaliser)) < 1e-9;
+    ok &= std::abs(state.amplitude[1].real() - (2.0 / normaliser)) < 1e-9;
+    ok &= std::abs(state.amplitude[2].real() - (3.0 / normaliser)) < 1e-9;
+    ok &= std::abs(state.amplitude[3].real()) < 1e-12;
+    const auto before = quantum.measurement_epoch();
+    quantum.mark_measured();
+    ok &= quantum.measurement_epoch() == before + 1;
+    std::cout << (ok ? "ok" : "fail") << '\n';
+    return ok ? 0 : 1;
+}
+"""
+        out = self.compile_and_run(code, 'qarray_init_state')
+        self.assertEqual(out, 'ok')
+
+    def test_qarray_copy_move_entanglement(self):
+        code = r"""#include <cmath>
+#include <iostream>
+#include "qpp/qarray"
+
+int main() {
+    std::qarray<int, 3> source{1, 2, 3};
+    auto baseline_state = source.quantum_state();
+    const double normaliser = std::sqrt(14.0);
+    bool ok = std::abs(baseline_state.amplitude[0].real() - (1.0 / normaliser)) < 1e-9;
+
+    std::qarray<int, 3> copy = source;
+    copy[0] = 42;
+    const auto copy_state = copy.quantum_state();
+    ok &= std::abs(copy_state.amplitude[0].real() - (42.0 / std::sqrt(42.0 * 42.0 + 2.0 * 2.0 + 3.0 * 3.0))) < 1e-9;
+    const auto source_state = source.quantum_state();
+    ok &= std::abs(source_state.amplitude[0].real() - (1.0 / normaliser)) < 1e-9;
+
+    std::qarray<int, 3> moved = std::move(copy);
+    moved[1] = -1;
+    const auto moved_state = moved.quantum_state();
+    ok &= moved_state.amplitude.size() == 4;
+
+    const auto before_measure = source.measurement_epoch();
+    source.mark_measured();
+    ok &= source.measurement_epoch() == before_measure + 1;
+    std::cout << (ok ? "ok" : "fail") << '\n';
+    return ok ? 0 : 1;
+}
+"""
+        out = self.compile_and_run(code, 'qarray_copy_move')
+        self.assertEqual(out, 'ok')
+
+    def test_qarray_matches_qvector_state(self):
+        code = r"""#include <cmath>
+#include <iostream>
+#include "qpp/qarray"
+#include "qpp/qvector"
+
+int main() {
+    std::qarray<int, 3> quantum_array{2, 1, 0};
+    std::qvector<int> quantum_vector{2, 1, 0};
+    const auto& array_state = quantum_array.quantum_state();
+    const auto& vector_state = quantum_vector.quantum_state();
+    if (array_state.amplitude.size() != vector_state.amplitude.size())
+        return 1;
+    bool ok = true;
+    for (std::size_t i = 0; i < array_state.amplitude.size(); ++i) {
+        ok &= std::abs(array_state.amplitude[i].real() - vector_state.amplitude[i].real()) < 1e-9;
+    }
+    std::cout << (ok ? "ok" : "fail") << '\n';
+    return ok ? 0 : 1;
+}
+"""
+        out = self.compile_and_run(code, 'qarray_qvector_sync')
+        self.assertEqual(out, 'ok')
+
     def test_period_finding(self):
         code = r"""#include <iostream>
 #include "qpp/sim/PeriodFinding.hpp"

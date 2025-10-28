@@ -63,15 +63,35 @@ that hashed containers remain stable after the first observation.
 
 ## `qvector`: quantum-friendly dynamic arrays
 
-`std::qvector<T>` is a straightforward alias for `std::vector<T>` that resides in
-the standard namespace. The alias lets educational material refer to "quantum
-vectors" without sacrificing the familiarity or performance characteristics of
-the standard dynamic array. Any API that works with `std::vector`—iterators,
-capacity management, algorithms—works identically with `std::qvector`.
+`std::qvector<T>` wraps `std::vector<T>` while wiring in amplitude tracking and
+measurement bookkeeping. The container exposes the familiar dynamic-array
+interface—constructors, iterators, capacity helpers—but every mutating
+operation marks the underlying quantum state as "dirty". When you subsequently
+query `quantum_state()` the container recomputes a normalised amplitude buffer
+using the same weighting rules as `qint::prepare_normalized_amplitudes` and
+bumps its entanglement epoch counter. Sampling code can call `mark_measured()`
+to advance the measurement epoch, allowing tests to reason about collapsed vs
+uncollapsed views.
 
-When storing `qint` values, `std::qvector<qint>` becomes the natural building
-block for quantum sequences. You can reserve capacity, push states, and iterate
-with range-based `for` loops exactly as you would with classical data.
+Because the container is still backed by `std::vector`, existing examples that
+push, emplace, erase, or reserve behave exactly as before. The additional hooks
+ensure that adjacent quantum components—such as `entangled_set` or manual
+probability tracking—observe consistent state without forcing eager updates.
+
+## `qarray`: fixed-size quantum storage
+
+`std::qarray<T, N>` mirrors `std::array<T, N>` but feeds into the same amplitude
+bookkeeping used by `std::qvector`. Construction from classical `std::array`
+instances, C++20-style aggregate initialisation, and copy/move semantics all
+result in a deterministic `quantum_state()` with a lazily recomputed amplitude
+vector sized to the next power of two. Iterators and element accessors mark the
+internal state as dirty, so mutations performed through range-for loops or
+algorithms trigger a resynchronisation the next time amplitudes are queried.
+
+The container exposes the same epoch counters as `std::qvector`, making it easy
+to assert that copies do not accidentally share entanglement metadata and that
+measurement notifications propagate uniformly across both dynamic and fixed-size
+storage.
 
 ## `entangled_set`: context-aware hash sets
 

@@ -1,18 +1,269 @@
 #pragma once
 
 #include <array>
+#include <cstddef>
+#include <initializer_list>
+#include <iterator>
+#include <stdexcept>
+#include <type_traits>
+#include <utility>
+
+#include "qpp/detail/quantum_container_bookkeeping.hpp"
 
 namespace std {
 
-/**
- * @brief Alias exposing the standard fixed-size array as a quantum array.
- *
- * Providing this alias allows quantum-specific code to reference a qarray
- * while reusing the optimised implementation of `std::array` and its
- * compile-time size guarantees.
- */
-template <typename T, std::size_t N>
-using qarray = std::array<T, N>;
+template <typename T, std::size_t N> class qarray {
+public:
+    using value_type = T;
+    using size_type = std::size_t;
+    using difference_type = std::ptrdiff_t;
+    using reference = T&;
+    using const_reference = const T&;
+    using pointer = T*;
+    using const_pointer = const T*;
+    using iterator = T*;
+    using const_iterator = const T*;
+    using reverse_iterator = std::reverse_iterator<iterator>;
+    using const_reverse_iterator = std::reverse_iterator<const_iterator>;
+
+    constexpr qarray() : data_{}, bookkeeping_{} { sync_quantum_state(); }
+
+    constexpr explicit qarray(const std::array<T, N>& classical)
+        : data_{classical}, bookkeeping_{} {
+        sync_quantum_state();
+    }
+
+    constexpr qarray(std::initializer_list<T> init) : data_{}, bookkeeping_{} {
+        if (init.size() > N)
+            throw std::length_error("initializer list larger than qarray");
+        std::size_t idx = 0;
+        for (const auto& value : init) {
+            data_[idx] = value;
+            ++idx;
+        }
+        for (; idx < N; ++idx)
+            data_[idx] = T{};
+        sync_quantum_state();
+    }
+
+    constexpr qarray(const qarray&) = default;
+    constexpr qarray(qarray&&) noexcept = default;
+    constexpr qarray& operator=(const qarray&) = default;
+    constexpr qarray& operator=(qarray&&) noexcept = default;
+
+    constexpr qarray& operator=(const std::array<T, N>& classical) {
+        data_ = classical;
+        bookkeeping_.mark_dirty();
+        return *this;
+    }
+
+    constexpr qarray& operator=(std::initializer_list<T> init) {
+        if (init.size() > N)
+            throw std::length_error("initializer list larger than qarray");
+        std::size_t idx = 0;
+        for (const auto& value : init) {
+            data_[idx] = value;
+            ++idx;
+        }
+        for (; idx < N; ++idx)
+            data_[idx] = T{};
+        bookkeeping_.mark_dirty();
+        return *this;
+    }
+
+    [[nodiscard]] static constexpr size_type size() noexcept { return N; }
+    [[nodiscard]] static constexpr size_type max_size() noexcept { return N; }
+    [[nodiscard]] static constexpr bool empty() noexcept { return N == 0; }
+
+    constexpr reference at(size_type pos) {
+        if (pos >= N)
+            throw std::out_of_range("qarray::at");
+        bookkeeping_.mark_dirty();
+        return data_[pos];
+    }
+
+    [[nodiscard]] constexpr const_reference at(size_type pos) const {
+        if (pos >= N)
+            throw std::out_of_range("qarray::at");
+        return data_[pos];
+    }
+
+    constexpr reference operator[](size_type pos) noexcept {
+        bookkeeping_.mark_dirty();
+        return data_[pos];
+    }
+
+    [[nodiscard]] constexpr const_reference operator[](size_type pos) const noexcept {
+        return data_[pos];
+    }
+
+    constexpr reference front() noexcept {
+        bookkeeping_.mark_dirty();
+        return data_.front();
+    }
+
+    [[nodiscard]] constexpr const_reference front() const noexcept { return data_.front(); }
+
+    constexpr reference back() noexcept {
+        bookkeeping_.mark_dirty();
+        return data_.back();
+    }
+
+    [[nodiscard]] constexpr const_reference back() const noexcept { return data_.back(); }
+
+    constexpr pointer data() noexcept {
+        bookkeeping_.mark_dirty();
+        return data_.data();
+    }
+
+    [[nodiscard]] constexpr const_pointer data() const noexcept { return data_.data(); }
+
+    constexpr iterator begin() noexcept {
+        bookkeeping_.mark_dirty();
+        return data_.data();
+    }
+
+    [[nodiscard]] constexpr const_iterator begin() const noexcept { return data_.data(); }
+    [[nodiscard]] constexpr const_iterator cbegin() const noexcept { return data_.data(); }
+
+    constexpr iterator end() noexcept {
+        bookkeeping_.mark_dirty();
+        return data_.data() + N;
+    }
+
+    [[nodiscard]] constexpr const_iterator end() const noexcept { return data_.data() + N; }
+    [[nodiscard]] constexpr const_iterator cend() const noexcept { return data_.data() + N; }
+
+    constexpr reverse_iterator rbegin() noexcept { return reverse_iterator(end()); }
+    [[nodiscard]] constexpr const_reverse_iterator rbegin() const noexcept {
+        return const_reverse_iterator(end());
+    }
+    [[nodiscard]] constexpr const_reverse_iterator crbegin() const noexcept {
+        return const_reverse_iterator(cend());
+    }
+
+    constexpr reverse_iterator rend() noexcept { return reverse_iterator(begin()); }
+    [[nodiscard]] constexpr const_reverse_iterator rend() const noexcept {
+        return const_reverse_iterator(begin());
+    }
+    [[nodiscard]] constexpr const_reverse_iterator crend() const noexcept {
+        return const_reverse_iterator(cbegin());
+    }
+
+    constexpr void fill(const T& value) {
+        data_.fill(value);
+        bookkeeping_.mark_dirty();
+    }
+
+    constexpr void swap(qarray& other) noexcept(std::is_nothrow_swappable<std::array<T, N>>::value) {
+        using std::swap;
+        swap(data_, other.data_);
+        bookkeeping_.swap(other.bookkeeping_);
+    }
+
+    friend constexpr void swap(qarray& lhs, qarray& rhs) noexcept(noexcept(lhs.swap(rhs))) {
+        lhs.swap(rhs);
+    }
+
+    [[nodiscard]] constexpr const std::array<T, N>& classical() const noexcept { return data_; }
+
+    constexpr std::array<T, N>& classical() noexcept {
+        bookkeeping_.mark_dirty();
+        return data_;
+    }
+
+    constexpr void mark_measured() const noexcept { bookkeeping_.note_measurement(); }
+
+    [[nodiscard]] constexpr std::size_t measurement_epoch() const noexcept {
+        return bookkeeping_.measurement_version();
+    }
+
+    [[nodiscard]] std::size_t entanglement_epoch() const {
+        sync_quantum_state();
+        return bookkeeping_.entanglement_version();
+    }
+
+    [[nodiscard]] const qpp::qstruct& quantum_state() const {
+        sync_quantum_state();
+        return bookkeeping_.amplitude();
+    }
+
+    friend constexpr bool operator==(const qarray& lhs, const qarray& rhs) {
+        return lhs.data_ == rhs.data_;
+    }
+
+    friend constexpr bool operator!=(const qarray& lhs, const qarray& rhs) {
+        return !(lhs == rhs);
+    }
+
+    friend constexpr bool operator<(const qarray& lhs, const qarray& rhs) {
+        return lhs.data_ < rhs.data_;
+    }
+
+    friend constexpr bool operator<=(const qarray& lhs, const qarray& rhs) {
+        return !(rhs < lhs);
+    }
+
+    friend constexpr bool operator>(const qarray& lhs, const qarray& rhs) { return rhs < lhs; }
+
+    friend constexpr bool operator>=(const qarray& lhs, const qarray& rhs) { return !(lhs < rhs); }
+
+private:
+    template <std::size_t Index> constexpr reference get_element() noexcept {
+        static_assert(Index < N, "qarray index out of bounds");
+        bookkeeping_.mark_dirty();
+        return data_[Index];
+    }
+
+    template <std::size_t Index> [[nodiscard]] constexpr const_reference get_element() const noexcept {
+        static_assert(Index < N, "qarray index out of bounds");
+        return data_[Index];
+    }
+
+    void sync_quantum_state() const {
+        bookkeeping_.ensure_amplitude(data_.begin(), data_.end());
+    }
+
+    std::array<T, N> data_{};
+    mutable qpp::detail::quantum_container::propagation_state bookkeeping_{};
+
+    template <std::size_t Index, typename U, std::size_t M>
+    friend constexpr U& get(qarray<U, M>&) noexcept;
+
+    template <std::size_t Index, typename U, std::size_t M>
+    friend constexpr const U& get(const qarray<U, M>&) noexcept;
+
+    template <std::size_t Index, typename U, std::size_t M>
+    friend constexpr U&& get(qarray<U, M>&&) noexcept;
+
+    template <std::size_t Index, typename U, std::size_t M>
+    friend constexpr const U&& get(const qarray<U, M>&&) noexcept;
+};
+
+template <std::size_t Index, typename T, std::size_t N> constexpr T& get(qarray<T, N>& arr) noexcept {
+    return arr.template get_element<Index>();
+}
+
+template <std::size_t Index, typename T, std::size_t N>
+constexpr const T& get(const qarray<T, N>& arr) noexcept {
+    return arr.template get_element<Index>();
+}
+
+template <std::size_t Index, typename T, std::size_t N>
+constexpr T&& get(qarray<T, N>&& arr) noexcept {
+    return std::move(arr.template get_element<Index>());
+}
+
+template <std::size_t Index, typename T, std::size_t N>
+constexpr const T&& get(const qarray<T, N>&& arr) noexcept {
+    return std::move(arr.template get_element<Index>());
+}
+
+template <typename T, std::size_t N> struct tuple_size<qarray<T, N>> : std::integral_constant<std::size_t, N> {};
+
+template <std::size_t Index, typename T, std::size_t N> struct tuple_element<Index, qarray<T, N>> {
+    using type = T;
+};
 
 } // namespace std
 
