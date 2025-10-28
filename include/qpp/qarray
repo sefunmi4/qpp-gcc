@@ -1,18 +1,247 @@
 #pragma once
 
 #include <array>
+#include <cstddef>
+#include <iterator>
+#include <tuple>
+#include <type_traits>
+#include <utility>
+#include <vector>
+
+#include "qpp/backend/notifications.hpp"
+#include "qpp/quantum/state.hpp"
+
+namespace qpp {
+
+/// Fixed-size quantum-aware container mirroring the API surface of
+/// std::array while keeping amplitude bookkeeping in sync with qvector.
+template <typename T, std::size_t N>
+class qarray {
+public:
+    using value_type = T;
+    using size_type = std::size_t;
+    using difference_type = std::ptrdiff_t;
+    using reference = value_type&;
+    using const_reference = const value_type&;
+    using pointer = value_type*;
+    using const_pointer = const value_type*;
+    using iterator = pointer;
+    using const_iterator = const_pointer;
+    using reverse_iterator = std::reverse_iterator<iterator>;
+    using const_reverse_iterator = std::reverse_iterator<const_iterator>;
+
+    static constexpr size_type static_size = N;
+
+    qarray() noexcept(std::is_nothrow_default_constructible_v<value_type>)
+        : data_{}, state_{} {
+        quantum::reset_state(state_, N);
+    }
+
+    explicit qarray(const std::array<value_type, N>& values) noexcept(
+        std::is_nothrow_copy_constructible_v<value_type>)
+        : data_(values), state_{} {
+        quantum::reset_state(state_, N);
+    }
+
+    template <typename U,
+              typename = std::enable_if_t<std::is_convertible_v<U, value_type>>>
+    explicit qarray(const std::array<U, N>& values)
+        : state_{} {
+        for (std::size_t i = 0; i < N; ++i)
+            data_[i] = static_cast<value_type>(values[i]);
+        quantum::reset_state(state_, N);
+    }
+
+    qarray(const value_type (&values)[N])
+        : state_{} {
+        for (std::size_t i = 0; i < N; ++i)
+            data_[i] = values[i];
+        quantum::reset_state(state_, N);
+    }
+
+    template <typename... U,
+              typename = std::enable_if_t<sizeof...(U) == N &&
+                                          (std::is_constructible_v<value_type, U&&> && ...)>>
+    qarray(U&&... values)
+        : data_{}, state_{} {
+        assign_from_pack(std::index_sequence_for<U...>{}, std::forward<U>(values)...);
+        quantum::reset_state(state_, N);
+    }
+
+    qarray(const qarray& other)
+        : data_(other.data_), state_(other.state_) {
+        backend::notify({backend::NotificationKind::Clone, "qarray", N, 0, 0.0});
+    }
+
+    qarray(qarray&& other) noexcept(std::is_nothrow_move_constructible_v<value_type>) = default;
+
+    qarray& operator=(const qarray& other) {
+        if (this == &other)
+            return *this;
+        data_ = other.data_;
+        state_ = other.state_;
+        backend::notify({backend::NotificationKind::Clone, "qarray", N, 0, 0.0});
+        return *this;
+    }
+
+    qarray& operator=(qarray&& other) noexcept(std::is_nothrow_move_assignable_v<value_type>) = default;
+
+    qarray& operator=(const std::array<value_type, N>& values) {
+        data_ = values;
+        quantum::reset_state(state_, N);
+        return *this;
+    }
+
+    template <typename U,
+              typename = std::enable_if_t<std::is_convertible_v<U, value_type>>>
+    qarray& operator=(const std::array<U, N>& values) {
+        for (std::size_t i = 0; i < N; ++i)
+            data_[i] = static_cast<value_type>(values[i]);
+        quantum::reset_state(state_, N);
+        return *this;
+    }
+
+    qarray& operator=(const value_type (&values)[N]) {
+        for (std::size_t i = 0; i < N; ++i)
+            data_[i] = values[i];
+        quantum::reset_state(state_, N);
+        return *this;
+    }
+
+    void fill(const value_type& value) {
+        data_.fill(value);
+        quantum::reset_state(state_, N);
+    }
+
+    void swap(qarray& other) noexcept(std::is_nothrow_swappable_v<value_type>) {
+        using std::swap;
+        swap(data_, other.data_);
+        swap(state_, other.state_);
+    }
+
+    [[nodiscard]] reference at(size_type pos) { return data_.at(pos); }
+    [[nodiscard]] const_reference at(size_type pos) const { return data_.at(pos); }
+
+    [[nodiscard]] constexpr reference operator[](size_type pos) noexcept { return data_[pos]; }
+    [[nodiscard]] constexpr const_reference operator[](size_type pos) const noexcept { return data_[pos]; }
+
+    [[nodiscard]] constexpr reference front() noexcept { return data_.front(); }
+    [[nodiscard]] constexpr const_reference front() const noexcept { return data_.front(); }
+
+    [[nodiscard]] constexpr reference back() noexcept { return data_.back(); }
+    [[nodiscard]] constexpr const_reference back() const noexcept { return data_.back(); }
+
+    [[nodiscard]] constexpr pointer data() noexcept { return data_.data(); }
+    [[nodiscard]] constexpr const_pointer data() const noexcept { return data_.data(); }
+
+    [[nodiscard]] constexpr iterator begin() noexcept { return data_.data(); }
+    [[nodiscard]] constexpr const_iterator begin() const noexcept { return data_.data(); }
+    [[nodiscard]] constexpr const_iterator cbegin() const noexcept { return data_.data(); }
+
+    [[nodiscard]] constexpr iterator end() noexcept { return data_.data() + N; }
+    [[nodiscard]] constexpr const_iterator end() const noexcept { return data_.data() + N; }
+    [[nodiscard]] constexpr const_iterator cend() const noexcept { return data_.data() + N; }
+
+    [[nodiscard]] constexpr reverse_iterator rbegin() noexcept { return reverse_iterator(end()); }
+    [[nodiscard]] constexpr const_reverse_iterator rbegin() const noexcept {
+        return const_reverse_iterator(end());
+    }
+    [[nodiscard]] constexpr const_reverse_iterator crbegin() const noexcept {
+        return const_reverse_iterator(end());
+    }
+
+    [[nodiscard]] constexpr reverse_iterator rend() noexcept { return reverse_iterator(begin()); }
+    [[nodiscard]] constexpr const_reverse_iterator rend() const noexcept {
+        return const_reverse_iterator(begin());
+    }
+    [[nodiscard]] constexpr const_reverse_iterator crend() const noexcept {
+        return const_reverse_iterator(begin());
+    }
+
+    [[nodiscard]] static constexpr size_type extent() noexcept { return N; }
+
+    [[nodiscard]] constexpr bool empty() const noexcept { return N == 0; }
+    [[nodiscard]] constexpr size_type size() const noexcept { return N; }
+    [[nodiscard]] constexpr size_type max_size() const noexcept { return N; }
+
+    [[nodiscard]] const quantum::qstate& state() const noexcept { return state_; }
+    [[nodiscard]] quantum::qstate& state() noexcept { return state_; }
+
+    [[nodiscard]] const std::vector<double>& probabilities() const {
+        quantum::ensure_probabilities(state_);
+        return state_.probabilities;
+    }
+
+    [[nodiscard]] double probability_of(size_type index) const {
+        quantum::ensure_probabilities(state_);
+        if (index >= state_.probabilities.size())
+            return 0.0;
+        return state_.probabilities[index];
+    }
+
+    const_reference measure(size_type index) {
+        const double p = probability_of(index);
+        quantum::collapse(state_, index);
+        backend::notify({backend::NotificationKind::Measurement, "qarray", N, index, p});
+        return data_.at(index);
+    }
+
+    [[nodiscard]] constexpr bool operator==(const qarray& other) const noexcept {
+        return data_ == other.data_;
+    }
+
+private:
+    template <typename... U, std::size_t... I>
+    void assign_from_pack(std::index_sequence<I...>, U&&... values) {
+        ((data_[I] = static_cast<value_type>(std::forward<U>(values))), ...);
+    }
+
+    std::array<value_type, N> data_{};
+    mutable quantum::qstate state_{};
+};
+
+template <typename T, std::size_t N>
+void swap(qarray<T, N>& lhs, qarray<T, N>& rhs) noexcept(noexcept(lhs.swap(rhs))) {
+    lhs.swap(rhs);
+}
+
+} // namespace qpp
+
+template <std::size_t I, typename T, std::size_t N>
+constexpr T& get(qpp::qarray<T, N>& arr) noexcept {
+    static_assert(I < N, "index out of range");
+    return arr[I];
+}
+
+template <std::size_t I, typename T, std::size_t N>
+constexpr const T& get(const qpp::qarray<T, N>& arr) noexcept {
+    static_assert(I < N, "index out of range");
+    return arr[I];
+}
+
+template <std::size_t I, typename T, std::size_t N>
+constexpr T&& get(qpp::qarray<T, N>&& arr) noexcept {
+    static_assert(I < N, "index out of range");
+    return std::move(arr[I]);
+}
+
+template <std::size_t I, typename T, std::size_t N>
+constexpr const T&& get(const qpp::qarray<T, N>&& arr) noexcept {
+    static_assert(I < N, "index out of range");
+    return std::move(arr[I]);
+}
 
 namespace std {
 
-/**
- * @brief Alias exposing the standard fixed-size array as a quantum array.
- *
- * Providing this alias allows quantum-specific code to reference a qarray
- * while reusing the optimised implementation of `std::array` and its
- * compile-time size guarantees.
- */
 template <typename T, std::size_t N>
-using qarray = std::array<T, N>;
+struct tuple_size<qpp::qarray<T, N>> : std::integral_constant<std::size_t, N> {};
+
+template <std::size_t I, typename T, std::size_t N>
+struct tuple_element<I, qpp::qarray<T, N>> {
+    using type = T;
+};
+
+template <typename T, std::size_t N>
+using qarray = qpp::qarray<T, N>;
 
 } // namespace std
-

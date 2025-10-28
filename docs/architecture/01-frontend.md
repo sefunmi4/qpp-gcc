@@ -30,6 +30,18 @@ register int r2;
 
 Explicit quantum or classical registers can be declared. When the `register` keyword is used alone the compiler chooses the appropriate kind.
 
+### Fixed Quantum Arrays
+
+The `<qpp/qarray>` header exposes `qpp::qarray` (aliased as `std::qarray`) which mirrors the familiar `std::array` API while tracking quantum amplitudes alongside classical storage.  Quantum-aware copies emit backend clone notifications, measurements collapse the tracked amplitudes, and helper methods such as `probability_of()` and `measure()` provide direct access to the synchronized state.
+
+```cpp
+#include "qpp/qarray"
+
+std::qarray<int, 4> tape{1, 2, 3, 4};
+double p = tape.probability_of(2); // 0.25 by default
+int collapsed = tape.measure(2);    // collapses amplitudes and emits a notification
+```
+
 ## Quantum-Aware Types
 
 ```cpp

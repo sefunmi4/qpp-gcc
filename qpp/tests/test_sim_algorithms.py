@@ -217,6 +217,53 @@ int main(){
         out = self.compile_and_run(code, 'qint_classical_measure')
         self.assertEqual(out, 'ok')
 
+    def test_qarray_quantum_hooks(self):
+        code = r"""#include <cmath>
+#include <iostream>
+#include <utility>
+#include <vector>
+#include "qpp/qarray"
+#include "qpp/backend/notifications.hpp"
+
+int main(){
+    using arr_t = std::qarray<int, 4>;
+    arr_t base{1, 2, 3, 4};
+    bool init_ok = base[0] == 1 && base[3] == 4 && base.size() == arr_t::extent();
+
+    std::vector<qpp::backend::Notification> notifications;
+    qpp::backend::set_notification_sink(
+        [&](const qpp::backend::Notification& n){ notifications.push_back(n); });
+
+    arr_t copy = base;
+    arr_t moved = std::move(base);
+
+    bool clone_notified = !notifications.empty() &&
+        notifications.front().kind == qpp::backend::NotificationKind::Clone &&
+        notifications.front().size == copy.size();
+
+    double uniform_prob = copy.probability_of(2);
+    bool uniform_ok = std::abs(uniform_prob - 0.25) < 1e-9;
+
+    int measured = copy.measure(2);
+    double collapsed_prob = copy.probability_of(2);
+    bool measurement_notified = !notifications.empty() &&
+        notifications.back().kind == qpp::backend::NotificationKind::Measurement &&
+        notifications.back().index == 2 &&
+        std::abs(notifications.back().probability - uniform_prob) < 1e-9;
+    bool measurement_ok = measured == 3 && collapsed_prob > 0.999;
+
+    bool move_state_ok = std::abs(moved.probability_of(1) - 0.25) < 1e-9;
+
+    qpp::backend::set_notification_sink({});
+    bool ok = init_ok && clone_notified && uniform_ok && measurement_notified &&
+              measurement_ok && move_state_ok;
+    std::cout << (ok ? "ok" : "fail") << '\n';
+    return 0;
+}
+"""
+        out = self.compile_and_run(code, 'qarray_hooks')
+        self.assertEqual(out, 'ok')
+
     def test_qvector_superposition_and_measurement(self):
         code = r"""#include <algorithm>
 #include <cmath>
