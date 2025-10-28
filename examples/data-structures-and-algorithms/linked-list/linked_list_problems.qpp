@@ -72,7 +72,7 @@ int main() {
     std::cout << "Remove Nth Node From End of List\n  result: "
               << describe_list(removal_example) << "\n\n";
 
-    std::qvector<NodePtr> merged_inputs{
+    qpp::qvector<NodePtr> merged_inputs{
         make_list({1, 4, 7}), make_list({2, 5, 8}), make_list({3, 6, 9})};
     const auto merged_k = merge_k_sorted_lists(merged_inputs);
     std::cout << "Merge K Sorted Lists\n  result: " << describe_list(merged_k)

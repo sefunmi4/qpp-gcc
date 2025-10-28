@@ -68,7 +68,7 @@ inline qint build_from_signed(int value) {
     return build_from_bits(bits);
 }
 
-inline std::vector<int> collapse_vector(const std::qvector<qint>& values) {
+inline std::vector<int> collapse_vector(const qpp::qvector<qint>& values) {
     std::vector<int> result;
     result.reserve(values.size());
     for (const auto& value : values)
@@ -76,8 +76,8 @@ inline std::vector<int> collapse_vector(const std::qvector<qint>& values) {
     return result;
 }
 
-inline std::qvector<qint> build_vector(const std::vector<int>& values) {
-    std::qvector<qint> result;
+inline qpp::qvector<qint> build_vector(const std::vector<int>& values) {
+    qpp::qvector<qint> result;
     result.reserve(values.size());
     for (int value : values)
         result.push_back(build_from_signed(value));
@@ -125,15 +125,15 @@ inline std::vector<int> classical_counting_bits(int n) {
 }
 
 /// Compute population counts for the range [0, n] and encode them as quantum integers.
-inline std::qvector<qint> counting_bits(int n) {
+inline qpp::qvector<qint> counting_bits(int n) {
     const auto classical_counts = classical_counting_bits(n);
     return detail::build_vector(classical_counts);
 }
 
 /// Compute population counts for the range [0, n] and encode them as quantum integers.
-inline std::qvector<qint> quantum_counting_bits(int n) { return counting_bits(n); }
+inline qpp::qvector<qint> quantum_counting_bits(int n) { return counting_bits(n); }
 
-inline std::qvector<qint> quantum_counting_bits(std::uint32_t n) {
+inline qpp::qvector<qint> quantum_counting_bits(std::uint32_t n) {
     return quantum_counting_bits(static_cast<int>(n));
 }
 
@@ -166,7 +166,7 @@ inline int missing_number(const std::vector<int>& nums) {
 }
 
 /// Return the missing value in the quantum variant of the problem.
-inline qint missing_number(const std::qvector<qint>& nums) {
+inline qint missing_number(const qpp::qvector<qint>& nums) {
     const auto classical = detail::collapse_vector(nums);
     return detail::build_from_signed(missing_number(classical));
 }
@@ -235,7 +235,7 @@ inline qint quantum_reverse_bits(std::uint32_t value) {
     return quantum_reverse_bits(make_quantum_from_uint32(value));
 }
 
-inline qint quantum_missing_number(const std::qvector<qint>& nums) {
+inline qint quantum_missing_number(const qpp::qvector<qint>& nums) {
     return missing_number(nums);
 }
 

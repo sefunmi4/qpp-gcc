@@ -38,7 +38,7 @@ inline classical_interval collapse_interval(const quantum_interval& interval) {
 }
 
 inline std::vector<classical_interval>
-collapse_intervals(const std::qvector<quantum_interval>& intervals) {
+collapse_intervals(const qpp::qvector<quantum_interval>& intervals) {
     std::vector<classical_interval> collapsed;
     collapsed.reserve(intervals.size());
     for (const auto& interval : intervals)
@@ -55,9 +55,9 @@ inline quantum_interval expand_interval(const classical_interval& interval) {
                             make_endpoint(interval.end)};
 }
 
-inline std::qvector<quantum_interval>
+inline qpp::qvector<quantum_interval>
 expand_intervals(const std::vector<classical_interval>& intervals) {
-    std::qvector<quantum_interval> expanded;
+    qpp::qvector<quantum_interval> expanded;
     expanded.reserve(intervals.size());
     for (const auto& interval : intervals)
         expanded.push_back(expand_interval(interval));
@@ -67,8 +67,8 @@ expand_intervals(const std::vector<classical_interval>& intervals) {
 } // namespace detail
 
 /// Insert a new interval into a sorted list of disjoint intervals.
-inline std::qvector<quantum_interval>
-insert_interval(const std::qvector<quantum_interval>& intervals,
+inline qpp::qvector<quantum_interval>
+insert_interval(const qpp::qvector<quantum_interval>& intervals,
                 const quantum_interval& new_interval) {
     const auto collapsed = detail::collapse_intervals(intervals);
     detail::classical_interval merged_new = detail::collapse_interval(new_interval);
@@ -101,8 +101,8 @@ insert_interval(const std::qvector<quantum_interval>& intervals,
 }
 
 /// Merge all overlapping intervals.
-inline std::qvector<quantum_interval>
-merge_intervals(const std::qvector<quantum_interval>& intervals) {
+inline qpp::qvector<quantum_interval>
+merge_intervals(const qpp::qvector<quantum_interval>& intervals) {
     auto collapsed = detail::collapse_intervals(intervals);
     if (collapsed.empty())
         return {};
@@ -133,7 +133,7 @@ merge_intervals(const std::qvector<quantum_interval>& intervals) {
 
 /// Minimum number of intervals to remove so that the remainder do not overlap.
 inline int
-erase_overlap_intervals(const std::qvector<quantum_interval>& intervals) {
+erase_overlap_intervals(const qpp::qvector<quantum_interval>& intervals) {
     if (intervals.size() < 2)
         return 0;
 
@@ -162,7 +162,7 @@ erase_overlap_intervals(const std::qvector<quantum_interval>& intervals) {
 
 /// Determine whether all meetings can be attended without overlaps.
 inline bool
-can_attend_all_meetings(const std::qvector<quantum_interval>& intervals) {
+can_attend_all_meetings(const qpp::qvector<quantum_interval>& intervals) {
     if (intervals.size() < 2)
         return true;
 
@@ -184,7 +184,7 @@ can_attend_all_meetings(const std::qvector<quantum_interval>& intervals) {
 }
 
 /// Minimum number of meeting rooms required to host all intervals.
-inline int min_meeting_rooms(const std::qvector<quantum_interval>& intervals) {
+inline int min_meeting_rooms(const qpp::qvector<quantum_interval>& intervals) {
     if (intervals.empty())
         return 0;
 
@@ -222,7 +222,7 @@ inline int min_meeting_rooms(const std::qvector<quantum_interval>& intervals) {
 }
 
 /// Probability bias describing how likely a random pair of intervals overlaps.
-inline qpp::pbool conflict_bias(const std::qvector<quantum_interval>& intervals) {
+inline qpp::pbool conflict_bias(const qpp::qvector<quantum_interval>& intervals) {
     if (intervals.size() < 2)
         return qpp::pbool{0.0};
 

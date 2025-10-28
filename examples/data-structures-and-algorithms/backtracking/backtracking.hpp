@@ -20,10 +20,10 @@ inline std::size_t encode_position(std::size_t row, std::size_t col,
     return row * cols + col;
 }
 
-inline void combination_sum_dfs(const std::qvector<int>& candidates,
+inline void combination_sum_dfs(const qpp::qvector<int>& candidates,
                                 int target, std::size_t index,
-                                std::qvector<int>& combination,
-                                std::qvector<std::qvector<int>>& result) {
+                                qpp::qvector<int>& combination,
+                                qpp::qvector<qpp::qvector<int>>& result) {
     if (target == 0) {
         result.push_back(combination);
         return;
@@ -40,7 +40,7 @@ inline void combination_sum_dfs(const std::qvector<int>& candidates,
     }
 }
 
-inline bool word_search_dfs(const std::qvector<std::qvector<char>>& board,
+inline bool word_search_dfs(const qpp::qvector<qpp::qvector<char>>& board,
                             std::string_view word, std::size_t depth, int row,
                             int col, std::entangled_set<std::size_t>& visited,
                             std::size_t cols) {
@@ -82,8 +82,8 @@ inline bool word_search_dfs(const std::qvector<std::qvector<char>>& board,
 /// The candidates are deduplicated and sorted internally. Each value can be
 /// used unlimited times. The algorithm performs a depth-first search while
 /// pruning branches whenever the partial sum would exceed the target.
-[[nodiscard]] inline std::qvector<std::qvector<int>>
-combination_sum(std::qvector<int> candidates, int target) {
+[[nodiscard]] inline qpp::qvector<qpp::qvector<int>>
+combination_sum(qpp::qvector<int> candidates, int target) {
     if (target < 0)
         return {};
 
@@ -95,8 +95,8 @@ combination_sum(std::qvector<int> candidates, int target) {
     candidates.assign(unique_candidates.begin(), unique_candidates.end());
     std::sort(candidates.begin(), candidates.end());
 
-    std::qvector<std::qvector<int>> result;
-    std::qvector<int> combination;
+    qpp::qvector<qpp::qvector<int>> result;
+    qpp::qvector<int> combination;
     detail::combination_sum_dfs(candidates, target, 0, combination, result);
     return result;
 }
@@ -106,7 +106,7 @@ combination_sum(std::qvector<int> candidates, int target) {
 /// Returns `true` when the word can be formed without revisiting cells. The
 /// recursion explores neighbours starting from every matching cell on the grid.
 [[nodiscard]] inline bool word_search(
-    const std::qvector<std::qvector<char>>& board, std::string_view word) {
+    const qpp::qvector<qpp::qvector<char>>& board, std::string_view word) {
     if (word.empty())
         return true;
     if (board.empty() || board.front().empty())
@@ -140,7 +140,7 @@ combination_sum(std::qvector<int> candidates, int target) {
 /// is primarily useful when integrating classical search results with quantum
 /// control logic inside QPP examples.
 [[nodiscard]] inline qpp::pbool word_search_probability(
-    const std::qvector<std::qvector<char>>& board, std::string_view word) {
+    const qpp::qvector<qpp::qvector<char>>& board, std::string_view word) {
     qpp::qclass indicator(1);
     if (word_search(board, word))
         indicator.apply_x(0);

@@ -27,7 +27,7 @@ void print_state(const qpp::qstruct& state, const std::string& label) {
 }
 
 void print_intervals(
-    const std::qvector<qpp::examples::intervals::quantum_interval>& intervals,
+    const qpp::qvector<qpp::examples::intervals::quantum_interval>& intervals,
     const std::string& label) {
     const auto collapsed =
         qpp::examples::intervals::detail::collapse_intervals(intervals);
@@ -45,7 +45,7 @@ int main() {
     using namespace qpp::examples::intervals;
 
     const auto to_quantum = [](const std::vector<std::pair<int, int>>& classical) {
-        std::qvector<quantum_interval> quantum;
+        qpp::qvector<quantum_interval> quantum;
         quantum.reserve(classical.size());
         for (const auto& bounds : classical) {
             const detail::classical_interval collapsed{bounds.first, bounds.second};
@@ -60,7 +60,7 @@ int main() {
     const auto new_interval = to_quantum(classical_new).front();
     const auto inserted = insert_interval(initial, new_interval);
     print_intervals(initial, "insert_interval input:");
-    print_intervals(std::qvector<quantum_interval>{new_interval}, "new interval:");
+    print_intervals(qpp::qvector<quantum_interval>{new_interval}, "new interval:");
     print_intervals(inserted, "insert_interval output:");
 
     const std::vector<std::pair<int, int>> classical_to_merge{{1, 4},

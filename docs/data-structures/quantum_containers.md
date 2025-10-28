@@ -63,15 +63,29 @@ that hashed containers remain stable after the first observation.
 
 ## `qvector`: quantum-friendly dynamic arrays
 
-`std::qvector<T>` is a straightforward alias for `std::vector<T>` that resides in
-the standard namespace. The alias lets educational material refer to "quantum
-vectors" without sacrificing the familiarity or performance characteristics of
-the standard dynamic array. Any API that works with `std::vector`—iterators,
-capacity management, algorithms—works identically with `std::qvector`.
+`qpp::qvector<T>` extends the ergonomics of `std::vector` with a lightweight
+quantum state tracker. Each container owns a classical `std::vector<T>` **and**
+an accompanying `qpp::quantum::qstate` that records amplitudes, cached
+probabilities, and collapse state. The two views stay in lockstep:
 
-When storing `qint` values, `std::qvector<qint>` becomes the natural building
-block for quantum sequences. You can reserve capacity, push states, and iterate
-with range-based `for` loops exactly as you would with classical data.
+- Structural operations (`push_back`, `insert`, `erase`, `resize`) delegate to
+  the classical vector and then rebalance the quantum metadata via helpers from
+  `qpp/quantum/state.hpp`. Amplitudes remain normalised, and collapsed states are
+  preserved when possible so superpositions survive typical container edits.
+- Accessors mirror the STL: iterators, `size()`, `operator[]`, `front()`, and
+  friends all forward to the underlying vector. Algorithms that expect
+  `std::vector` iterators therefore work transparently with `qpp::qvector`.
+- Quantum-specific hooks expose the extra state. Call `probabilities()` or
+  `probability_of(index)` to retrieve normalised measurement distributions, and
+  `measure(index)` to collapse the vector to a concrete branch. Copying a
+  container or measuring an element emits notifications through
+  `qpp::backend::set_notification_sink`, allowing simulators and backends to
+  react to classical observation events.
+
+When storing `qint` values, `qpp::qvector<qint>` becomes the natural building
+block for quantum sequences. You can reserve capacity, push states, iterate with
+range-based `for` loops, and still ask the container how likely each element is
+to appear after a measurement.
 
 ## `entangled_set`: context-aware hash sets
 
@@ -105,7 +119,7 @@ questions in a quantum context. The duplicate-check routine below highlights the
 interplay between all three types:
 
 ```cpp
-std::qvector<qint> states = {/* ... prepare quantum inputs ... */};
+qpp::qvector<qint> states = {/* ... prepare quantum inputs ... */};
 std::entangled_set<qint> visited;
 visited.reserve(states.size());
 for (const auto& state : states) {
@@ -116,7 +130,8 @@ for (const auto& state : states) {
 return false;
 ```
 
-- `qvector` provides contiguous storage for a sequence of `qint` states.
+- `qvector` provides contiguous storage for a sequence of `qint` states and lets
+  you inspect or collapse their shared superposition when necessary.
 - Each `qint` carries multi-axis orientation data while remaining hashable.
 - `entangled_set` tracks which states have been observed using its salted hash
   function.

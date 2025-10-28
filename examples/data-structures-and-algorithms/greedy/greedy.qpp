@@ -32,7 +32,7 @@ int main() {
     using namespace qpp::examples::greedy;
 
     const auto to_quantum = [](const auto& classical_values) {
-        std::qvector<::qint> quantum_values;
+        qpp::qvector<::qint> quantum_values;
         quantum_values.reserve(classical_values.size());
         for (int value : classical_values) {
             const int sign = value >= 0 ? 1 : -1;

@@ -12,7 +12,7 @@ namespace qpp::examples::graph {
 
 struct Node {
     int value{};
-    std::qvector<Node*> neighbors{};
+    qpp::qvector<Node*> neighbors{};
 };
 
 using NodeCloneMap =
@@ -21,8 +21,8 @@ using NodeCloneMap =
 namespace detail {
 inline constexpr int kDirections[4][2] = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}};
 
-inline void dfs_islands(const std::qvector<std::qvector<char>>& grid,
-                        std::qvector<std::qvector<bool>>& visited, int row,
+inline void dfs_islands(const qpp::qvector<qpp::qvector<char>>& grid,
+                        qpp::qvector<qpp::qvector<bool>>& visited, int row,
                         int col) {
     const int rows = static_cast<int>(grid.size());
     const int cols = static_cast<int>(grid.front().size());
@@ -51,8 +51,8 @@ inline void dfs_clone(Node* node, NodeCloneMap& clones) {
 }
 
 inline void dfs_flow(int row, int col,
-                     const std::qvector<std::qvector<int>>& heights,
-                     std::qvector<std::qvector<bool>>& reachable) {
+                     const qpp::qvector<qpp::qvector<int>>& heights,
+                     qpp::qvector<qpp::qvector<bool>>& reachable) {
     if (reachable[row][col])
         return;
 
@@ -73,14 +73,14 @@ inline void dfs_flow(int row, int col,
 } // namespace detail
 
 inline std::size_t count_islands(
-    const std::qvector<std::qvector<char>>& grid) {
+    const qpp::qvector<qpp::qvector<char>>& grid) {
     if (grid.empty() || grid.front().empty())
         return 0;
 
     const int rows = static_cast<int>(grid.size());
     const int cols = static_cast<int>(grid.front().size());
-    std::qvector<std::qvector<bool>> visited(static_cast<std::size_t>(rows),
-                                            std::qvector<bool>(static_cast<std::size_t>(cols)));
+    qpp::qvector<qpp::qvector<bool>> visited(static_cast<std::size_t>(rows),
+                                            qpp::qvector<bool>(static_cast<std::size_t>(cols)));
     std::size_t islands = 0;
 
     for (int row = 0; row < rows; ++row) {
@@ -105,17 +105,17 @@ inline Node* clone_graph(Node* node) {
     return clones[node];
 }
 
-inline std::qvector<std::pair<int, int>> pacific_atlantic(
-    const std::qvector<std::qvector<int>>& heights) {
+inline qpp::qvector<std::pair<int, int>> pacific_atlantic(
+    const qpp::qvector<qpp::qvector<int>>& heights) {
     if (heights.empty() || heights.front().empty())
         return {};
 
     const int rows = static_cast<int>(heights.size());
     const int cols = static_cast<int>(heights.front().size());
-    std::qvector<std::qvector<bool>> pacific(static_cast<std::size_t>(rows),
-                                             std::qvector<bool>(static_cast<std::size_t>(cols)));
-    std::qvector<std::qvector<bool>> atlantic(static_cast<std::size_t>(rows),
-                                              std::qvector<bool>(static_cast<std::size_t>(cols)));
+    qpp::qvector<qpp::qvector<bool>> pacific(static_cast<std::size_t>(rows),
+                                             qpp::qvector<bool>(static_cast<std::size_t>(cols)));
+    qpp::qvector<qpp::qvector<bool>> atlantic(static_cast<std::size_t>(rows),
+                                              qpp::qvector<bool>(static_cast<std::size_t>(cols)));
 
     for (int col = 0; col < cols; ++col) {
         detail::dfs_flow(0, col, heights, pacific);
@@ -127,7 +127,7 @@ inline std::qvector<std::pair<int, int>> pacific_atlantic(
         detail::dfs_flow(row, cols - 1, heights, atlantic);
     }
 
-    std::qvector<std::pair<int, int>> result;
+    qpp::qvector<std::pair<int, int>> result;
     result.reserve(static_cast<std::size_t>(rows * cols));
     for (int row = 0; row < rows; ++row) {
         for (int col = 0; col < cols; ++col) {
@@ -140,12 +140,12 @@ inline std::qvector<std::pair<int, int>> pacific_atlantic(
 }
 
 inline bool can_finish_courses(
-    int num_courses, const std::qvector<std::pair<int, int>>& prerequisites) {
+    int num_courses, const qpp::qvector<std::pair<int, int>>& prerequisites) {
     if (num_courses <= 0)
         return prerequisites.empty();
 
-    std::qvector<std::qvector<int>> graph(static_cast<std::size_t>(num_courses));
-    std::qvector<int> indegree(static_cast<std::size_t>(num_courses), 0);
+    qpp::qvector<qpp::qvector<int>> graph(static_cast<std::size_t>(num_courses));
+    qpp::qvector<int> indegree(static_cast<std::size_t>(num_courses), 0);
     for (const auto& [course, prereq] : prerequisites) {
         if (course < 0 || course >= num_courses || prereq < 0 ||
             prereq >= num_courses)
@@ -155,7 +155,7 @@ inline bool can_finish_courses(
         ++indegree[course];
     }
 
-    std::qvector<int> queue;
+    qpp::qvector<int> queue;
     queue.reserve(static_cast<std::size_t>(num_courses));
     for (int course = 0; course < num_courses; ++course) {
         if (indegree[static_cast<std::size_t>(course)] == 0)
@@ -179,14 +179,14 @@ inline bool can_finish_courses(
 }
 
 inline bool is_valid_tree(int n,
-                          const std::qvector<std::pair<int, int>>& edges) {
+                          const qpp::qvector<std::pair<int, int>>& edges) {
     if (n <= 0)
         return false;
 
     if (edges.size() != static_cast<std::size_t>(n - 1))
         return false;
 
-    std::qvector<std::qvector<int>> graph(static_cast<std::size_t>(n));
+    qpp::qvector<qpp::qvector<int>> graph(static_cast<std::size_t>(n));
     for (const auto& [u, v] : edges) {
         if (u < 0 || u >= n || v < 0 || v >= n)
             return false;
@@ -195,8 +195,8 @@ inline bool is_valid_tree(int n,
         graph[v].push_back(u);
     }
 
-    std::qvector<bool> visited(static_cast<std::size_t>(n), false);
-    std::qvector<int> queue;
+    qpp::qvector<bool> visited(static_cast<std::size_t>(n), false);
+    qpp::qvector<int> queue;
     queue.push_back(0);
     visited[0] = true;
 
@@ -218,11 +218,11 @@ inline bool is_valid_tree(int n,
 }
 
 inline int count_components(
-    int n, const std::qvector<std::pair<int, int>>& edges) {
+    int n, const qpp::qvector<std::pair<int, int>>& edges) {
     if (n <= 0)
         return 0;
 
-    std::qvector<std::qvector<int>> graph(static_cast<std::size_t>(n));
+    qpp::qvector<qpp::qvector<int>> graph(static_cast<std::size_t>(n));
     for (const auto& [u, v] : edges) {
         if (u < 0 || u >= n || v < 0 || v >= n)
             continue;
@@ -231,8 +231,8 @@ inline int count_components(
         graph[v].push_back(u);
     }
 
-    std::qvector<bool> visited(static_cast<std::size_t>(n), false);
-    std::qvector<int> queue;
+    qpp::qvector<bool> visited(static_cast<std::size_t>(n), false);
+    qpp::qvector<int> queue;
     int components = 0;
 
     for (int node = 0; node < n; ++node) {

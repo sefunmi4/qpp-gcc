@@ -124,7 +124,7 @@ inline bool is_valid_parentheses(std::string_view s) {
 }
 
 /// Determine whether a sequence of encoded bracket tokens is valid.
-inline bool is_valid_parentheses(const std::qvector<qint>& sequence) {
+inline bool is_valid_parentheses(const qpp::qvector<qint>& sequence) {
     return detail::validate_sequence(sequence.size(),
                                      [&](std::size_t index) {
                                          const auto measured_axes =
@@ -137,7 +137,7 @@ inline bool is_valid_parentheses(const std::qvector<qint>& sequence) {
 }
 
 /// Convenience wrapper that mirrors the quantum-prefixed API used by the sample.
-inline bool quantum_is_valid_parentheses(const std::qvector<qint>& sequence) {
+inline bool quantum_is_valid_parentheses(const qpp::qvector<qint>& sequence) {
     return is_valid_parentheses(sequence);
 }
 
@@ -147,8 +147,8 @@ inline qpp::pbool parentheses_confidence(std::string_view s) {
 }
 
 /// Convert a bracket string into a quantum-friendly encoding of bracket tokens.
-inline std::qvector<qint> encode_parentheses_sequence(std::string_view s) {
-    std::qvector<qint> encoded;
+inline qpp::qvector<qint> encode_parentheses_sequence(std::string_view s) {
+    qpp::qvector<qint> encoded;
     encoded.reserve(s.size());
 
     for (char symbol : s) {
@@ -165,7 +165,7 @@ inline std::qvector<qint> encode_parentheses_sequence(std::string_view s) {
 }
 
 /// Convert an encoded bracket sequence back into its string representation.
-inline std::string decode_parentheses_sequence(const std::qvector<qint>& sequence) {
+inline std::string decode_parentheses_sequence(const qpp::qvector<qint>& sequence) {
     std::string decoded;
     decoded.reserve(sequence.size());
 

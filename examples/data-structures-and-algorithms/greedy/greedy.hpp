@@ -36,7 +36,7 @@ inline int collapse_to_scalar(const qint& value) {
 } // namespace detail
 
 /// Return the maximum sum obtainable from a contiguous subarray.
-inline int maximum_subarray(const std::qvector<qint>& nums) {
+inline int maximum_subarray(const qpp::qvector<qint>& nums) {
     if (nums.empty())
         return 0;
 
@@ -53,7 +53,7 @@ inline int maximum_subarray(const std::qvector<qint>& nums) {
 
 
 /// Determine whether it is possible to reach the last index.
-inline bool can_jump(const std::qvector<qint>& nums) {
+inline bool can_jump(const qpp::qvector<qint>& nums) {
     const auto collapse_step = [](const qint& value) {
         return detail::collapse_to_scalar(value);
     };
@@ -72,7 +72,7 @@ inline bool can_jump(const std::qvector<qint>& nums) {
 }
 
 /// Build a register encoding reachable prefixes for the jump game instance.
-inline qpp::qclass reachable_prefix_superposition(const std::qvector<qint>& nums) {
+inline qpp::qclass reachable_prefix_superposition(const qpp::qvector<qint>& nums) {
     const std::size_t n = nums.size();
     std::size_t qubits = 0;
     while ((std::size_t{1} << qubits) < std::max<std::size_t>(n, 1))

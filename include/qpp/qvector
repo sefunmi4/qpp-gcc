@@ -1,18 +1,298 @@
 #pragma once
 
+#include <initializer_list>
+#include <iterator>
+#include <type_traits>
+#include <utility>
 #include <vector>
 
-namespace std {
+#include "qpp/backend/notifications.hpp"
+#include "qpp/quantum/state.hpp"
 
-/**
- * @brief Alias exposing the standard dynamic array as a quantum vector.
- *
- * Providing this alias allows quantum-specific code to reference a qvector
- * while reusing the optimised implementation of `std::vector` and its
- * allocator-aware interface.
- */
+namespace qpp {
+
+/// Quantum-aware dynamic array that tracks amplitude metadata alongside
+/// classical storage.
 template <typename T, typename Allocator = std::allocator<T>>
-using qvector = std::vector<T, Allocator>;
+class qvector {
+public:
+    using value_type = T;
+    using allocator_type = Allocator;
+    using size_type = typename std::vector<T, Allocator>::size_type;
+    using difference_type = typename std::vector<T, Allocator>::difference_type;
+    using reference = T&;
+    using const_reference = const T&;
+    using pointer = typename std::vector<T, Allocator>::pointer;
+    using const_pointer = typename std::vector<T, Allocator>::const_pointer;
+    using iterator = typename std::vector<T, Allocator>::iterator;
+    using const_iterator = typename std::vector<T, Allocator>::const_iterator;
+    using reverse_iterator = typename std::vector<T, Allocator>::reverse_iterator;
+    using const_reverse_iterator = typename std::vector<T, Allocator>::const_reverse_iterator;
 
-} // namespace std
+    qvector() noexcept(std::is_nothrow_default_constructible_v<std::vector<T, Allocator>>)
+        : data_{}, state_{} {}
+
+    explicit qvector(const Allocator& alloc)
+        : data_{alloc}, state_{} {}
+
+    explicit qvector(size_type count, const T& value = T(),
+                     const Allocator& alloc = Allocator())
+        : data_(count, value, alloc), state_{} {
+        quantum::reset_state(state_, data_.size());
+    }
+
+    explicit qvector(size_type count, const Allocator& alloc)
+        : data_(count, alloc), state_{} {
+        quantum::reset_state(state_, data_.size());
+    }
+
+    template <typename InputIt,
+              typename = std::enable_if_t<!std::is_integral_v<InputIt>>>
+    qvector(InputIt first, InputIt last, const Allocator& alloc = Allocator())
+        : data_(first, last, alloc), state_{} {
+        quantum::reset_state(state_, data_.size());
+    }
+
+    qvector(std::initializer_list<T> init, const Allocator& alloc = Allocator())
+        : data_(init, alloc), state_{} {
+        quantum::reset_state(state_, data_.size());
+    }
+
+    qvector(const qvector& other)
+        : data_(other.data_), state_(other.state_) {
+        backend::notify({backend::NotificationKind::Clone, "qvector", data_.size(), 0, 0.0});
+    }
+
+    qvector(qvector&& other) noexcept(
+        std::is_nothrow_move_constructible_v<std::vector<T, Allocator>>)
+        : data_(std::move(other.data_)), state_(std::move(other.state_)) {}
+
+    qvector(const std::vector<T, Allocator>& other, const Allocator& alloc = Allocator())
+        : data_(other, alloc), state_{} {
+        quantum::reset_state(state_, data_.size());
+    }
+
+    ~qvector() = default;
+
+    qvector& operator=(const qvector& other) {
+        if (this == &other)
+            return *this;
+        data_ = other.data_;
+        state_ = other.state_;
+        backend::notify({backend::NotificationKind::Clone, "qvector", data_.size(), 0, 0.0});
+        return *this;
+    }
+
+    qvector& operator=(qvector&& other) noexcept(
+        std::is_nothrow_move_assignable_v<std::vector<T, Allocator>>) {
+        if (this == &other)
+            return *this;
+        data_ = std::move(other.data_);
+        state_ = std::move(other.state_);
+        return *this;
+    }
+
+    qvector& operator=(std::initializer_list<T> init) {
+        data_.assign(init.begin(), init.end());
+        quantum::reset_state(state_, data_.size());
+        return *this;
+    }
+
+    void assign(size_type count, const T& value) {
+        data_.assign(count, value);
+        quantum::reset_state(state_, data_.size());
+    }
+
+    template <typename InputIt,
+              typename = std::enable_if_t<!std::is_integral_v<InputIt>>>
+    void assign(InputIt first, InputIt last) {
+        data_.assign(first, last);
+        quantum::reset_state(state_, data_.size());
+    }
+
+    void assign(std::initializer_list<T> ilist) {
+        assign(ilist.begin(), ilist.end());
+    }
+
+    [[nodiscard]] allocator_type get_allocator() const { return data_.get_allocator(); }
+
+    [[nodiscard]] reference at(size_type pos) { return data_.at(pos); }
+    [[nodiscard]] const_reference at(size_type pos) const { return data_.at(pos); }
+
+    [[nodiscard]] reference operator[](size_type pos) { return data_[pos]; }
+    [[nodiscard]] const_reference operator[](size_type pos) const { return data_[pos]; }
+
+    [[nodiscard]] reference front() { return data_.front(); }
+    [[nodiscard]] const_reference front() const { return data_.front(); }
+
+    [[nodiscard]] reference back() { return data_.back(); }
+    [[nodiscard]] const_reference back() const { return data_.back(); }
+
+    [[nodiscard]] pointer data() noexcept { return data_.data(); }
+    [[nodiscard]] const_pointer data() const noexcept { return data_.data(); }
+
+    [[nodiscard]] iterator begin() noexcept { return data_.begin(); }
+    [[nodiscard]] const_iterator begin() const noexcept { return data_.begin(); }
+    [[nodiscard]] const_iterator cbegin() const noexcept { return data_.cbegin(); }
+
+    [[nodiscard]] iterator end() noexcept { return data_.end(); }
+    [[nodiscard]] const_iterator end() const noexcept { return data_.end(); }
+    [[nodiscard]] const_iterator cend() const noexcept { return data_.cend(); }
+
+    [[nodiscard]] reverse_iterator rbegin() noexcept { return data_.rbegin(); }
+    [[nodiscard]] const_reverse_iterator rbegin() const noexcept { return data_.rbegin(); }
+    [[nodiscard]] const_reverse_iterator crbegin() const noexcept { return data_.crbegin(); }
+
+    [[nodiscard]] reverse_iterator rend() noexcept { return data_.rend(); }
+    [[nodiscard]] const_reverse_iterator rend() const noexcept { return data_.rend(); }
+    [[nodiscard]] const_reverse_iterator crend() const noexcept { return data_.crend(); }
+
+    [[nodiscard]] bool empty() const noexcept { return data_.empty(); }
+    [[nodiscard]] size_type size() const noexcept { return data_.size(); }
+    [[nodiscard]] size_type max_size() const noexcept { return data_.max_size(); }
+
+    void reserve(size_type new_cap) { data_.reserve(new_cap); }
+    [[nodiscard]] size_type capacity() const noexcept { return data_.capacity(); }
+    void shrink_to_fit() { data_.shrink_to_fit(); }
+
+    void clear() noexcept {
+        data_.clear();
+        quantum::reset_state(state_, 0);
+    }
+
+    iterator insert(const_iterator pos, const T& value) {
+        auto it = data_.insert(pos, value);
+        quantum::resize_preserving_norm(state_, data_.size());
+        return it;
+    }
+
+    iterator insert(const_iterator pos, T&& value) {
+        auto it = data_.insert(pos, std::move(value));
+        quantum::resize_preserving_norm(state_, data_.size());
+        return it;
+    }
+
+    iterator insert(const_iterator pos, size_type count, const T& value) {
+        auto it = data_.insert(pos, count, value);
+        quantum::resize_preserving_norm(state_, data_.size());
+        return it;
+    }
+
+    template <typename InputIt,
+              typename = std::enable_if_t<!std::is_integral_v<InputIt>>>
+    iterator insert(const_iterator pos, InputIt first, InputIt last) {
+        auto it = data_.insert(pos, first, last);
+        quantum::resize_preserving_norm(state_, data_.size());
+        return it;
+    }
+
+    iterator insert(const_iterator pos, std::initializer_list<T> ilist) {
+        auto it = data_.insert(pos, ilist);
+        quantum::resize_preserving_norm(state_, data_.size());
+        return it;
+    }
+
+    template <typename... Args>
+    reference emplace_back(Args&&... args) {
+        data_.emplace_back(std::forward<Args>(args)...);
+        quantum::resize_preserving_norm(state_, data_.size());
+        return data_.back();
+    }
+
+    template <typename... Args>
+    iterator emplace(const_iterator pos, Args&&... args) {
+        auto it = data_.emplace(pos, std::forward<Args>(args)...);
+        quantum::resize_preserving_norm(state_, data_.size());
+        return it;
+    }
+
+    void push_back(const T& value) {
+        data_.push_back(value);
+        quantum::resize_preserving_norm(state_, data_.size());
+    }
+
+    void push_back(T&& value) {
+        data_.push_back(std::move(value));
+        quantum::resize_preserving_norm(state_, data_.size());
+    }
+
+    void pop_back() {
+        data_.pop_back();
+        quantum::resize_preserving_norm(state_, data_.size());
+    }
+
+    iterator erase(const_iterator pos) {
+        auto it = data_.erase(pos);
+        quantum::resize_preserving_norm(state_, data_.size());
+        return it;
+    }
+
+    iterator erase(const_iterator first, const_iterator last) {
+        auto it = data_.erase(first, last);
+        quantum::resize_preserving_norm(state_, data_.size());
+        return it;
+    }
+
+    void resize(size_type count) {
+        const auto old_size = data_.size();
+        data_.resize(count);
+        adjust_state_after_resize(old_size);
+    }
+
+    void resize(size_type count, const value_type& value) {
+        const auto old_size = data_.size();
+        data_.resize(count, value);
+        adjust_state_after_resize(old_size);
+    }
+
+    void swap(qvector& other) noexcept(
+        noexcept(std::swap(std::declval<std::vector<T, Allocator>&>(),
+                            std::declval<std::vector<T, Allocator>&>()))) {
+        using std::swap;
+        swap(data_, other.data_);
+        swap(state_, other.state_);
+    }
+
+    [[nodiscard]] const quantum::qstate& state() const noexcept { return state_; }
+    [[nodiscard]] quantum::qstate& state() noexcept { return state_; }
+
+    [[nodiscard]] const std::vector<double>& probabilities() const {
+        quantum::ensure_probabilities(state_);
+        return state_.probabilities;
+    }
+
+    [[nodiscard]] double probability_of(size_type index) const {
+        quantum::ensure_probabilities(state_);
+        if (index >= state_.probabilities.size())
+            return 0.0;
+        return state_.probabilities[index];
+    }
+
+    const_reference measure(size_type index) {
+        const double p = probability_of(index);
+        quantum::collapse(state_, index);
+        backend::notify({backend::NotificationKind::Measurement, "qvector", data_.size(),
+                         index, p});
+        return data_.at(index);
+    }
+
+private:
+    void adjust_state_after_resize(size_type previous_size) {
+        if (previous_size == 0 && !data_.empty()) {
+            quantum::reset_state(state_, data_.size());
+            return;
+        }
+        quantum::resize_preserving_norm(state_, data_.size());
+    }
+
+    std::vector<T, Allocator> data_;
+    mutable quantum::qstate state_;
+};
+
+template <typename T, typename Allocator>
+void swap(qvector<T, Allocator>& lhs, qvector<T, Allocator>& rhs) noexcept(noexcept(lhs.swap(rhs))) {
+    lhs.swap(rhs);
+}
+
+} // namespace qpp
 

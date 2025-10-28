@@ -53,11 +53,11 @@ inline NodePtr make_node(int value, NodePtr left = nullptr, NodePtr right = null
     return make_node(QuantumLabel::encode(value), std::move(left), std::move(right));
 }
 
-inline NodePtr make_tree(const std::qvector<std::optional<int>>& values) {
+inline NodePtr make_tree(const qpp::qvector<std::optional<int>>& values) {
     if (values.empty() || !values.front())
         return nullptr;
 
-    std::qvector<NodePtr> nodes(values.size());
+    qpp::qvector<NodePtr> nodes(values.size());
     nodes.front() = make_node(*values.front());
 
     for (std::size_t index = 0; index < values.size(); ++index) {
@@ -87,7 +87,7 @@ inline NodePtr make_tree(const std::qvector<std::optional<int>>& values) {
 }
 
 inline NodePtr make_tree(std::initializer_list<std::optional<int>> values) {
-    return make_tree(std::qvector<std::optional<int>>{values});
+    return make_tree(qpp::qvector<std::optional<int>>{values});
 }
 
 inline std::string serialize(const NodePtr& root) {
@@ -95,7 +95,7 @@ inline std::string serialize(const NodePtr& root) {
         return "null";
 
     std::ostringstream stream;
-    std::qvector<NodePtr> queue;
+    qpp::qvector<NodePtr> queue;
     queue.push_back(root);
 
     bool first = true;
@@ -122,7 +122,7 @@ inline NodePtr deserialize(const std::string& data) {
     if (data == "null" || data.empty())
         return nullptr;
 
-    std::qvector<std::optional<int>> values;
+    qpp::qvector<std::optional<int>> values;
     std::size_t start = 0;
     while (start <= data.size()) {
         const auto end = data.find(',', start);
@@ -142,7 +142,7 @@ inline NodePtr deserialize(const std::string& data) {
         return nullptr;
 
     NodePtr root = make_node(*values.front());
-    std::qvector<NodePtr> queue;
+    qpp::qvector<NodePtr> queue;
     queue.push_back(root);
 
     std::size_t index = 1;
@@ -220,17 +220,17 @@ inline NodePtr lowest_common_ancestor_bst(NodePtr root, int value1, int value2) 
     return nullptr;
 }
 
-inline std::qvector<std::qvector<int>> level_order(const NodePtr& root) {
-    std::qvector<std::qvector<int>> levels;
+inline qpp::qvector<qpp::qvector<int>> level_order(const NodePtr& root) {
+    qpp::qvector<qpp::qvector<int>> levels;
     if (!root)
         return levels;
 
-    std::qvector<NodePtr> queue;
+    qpp::qvector<NodePtr> queue;
     queue.push_back(root);
 
     for (std::size_t front = 0; front < queue.size();) {
         const auto size = queue.size() - front;
-        std::qvector<int> level;
+        qpp::qvector<int> level;
         level.reserve(size);
 
         for (std::size_t index = 0; index < size; ++index) {
@@ -263,7 +263,7 @@ inline bool is_valid_bst(const NodePtr& root, std::optional<int> min = std::null
 }
 
 inline std::optional<int> kth_smallest(const NodePtr& root, int k) {
-    std::qvector<NodePtr> stack;
+    qpp::qvector<NodePtr> stack;
     auto current = root;
     int count = 0;
 
@@ -285,7 +285,7 @@ inline std::optional<int> kth_smallest(const NodePtr& root, int k) {
     return std::nullopt;
 }
 
-inline NodePtr build_tree_impl(const std::qvector<int>& preorder,
+inline NodePtr build_tree_impl(const qpp::qvector<int>& preorder,
                                std::size_t pre_left,
                                std::size_t pre_right,
                                const std::unordered_map<int, std::size_t>& inorder_index,
@@ -307,7 +307,7 @@ inline NodePtr build_tree_impl(const std::qvector<int>& preorder,
     return root;
 }
 
-inline NodePtr build_tree(const std::qvector<int>& preorder, const std::qvector<int>& inorder) {
+inline NodePtr build_tree(const qpp::qvector<int>& preorder, const qpp::qvector<int>& inorder) {
     if (preorder.size() != inorder.size() || preorder.empty())
         return nullptr;
 
@@ -337,7 +337,7 @@ inline int max_path_sum(const NodePtr& root) {
     return best;
 }
 
-inline std::string describe_levels(const std::qvector<std::qvector<int>>& levels) {
+inline std::string describe_levels(const qpp::qvector<qpp::qvector<int>>& levels) {
     std::ostringstream stream;
     stream << '[';
     for (std::size_t level_index = 0; level_index < levels.size(); ++level_index) {

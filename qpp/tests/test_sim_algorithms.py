@@ -217,6 +217,72 @@ int main(){
         out = self.compile_and_run(code, 'qint_classical_measure')
         self.assertEqual(out, 'ok')
 
+    def test_qvector_superposition_and_measurement(self):
+        code = r"""#include <algorithm>
+#include <cmath>
+#include <iostream>
+#include <numeric>
+#include <vector>
+#include "qpp/backend/notifications.hpp"
+#include "qpp/qvector"
+
+int main(){
+    using qpp::backend::Notification;
+    using qpp::backend::NotificationKind;
+    using qpp::backend::set_notification_sink;
+
+    std::vector<Notification> events;
+    set_notification_sink([&](const Notification& n){ events.push_back(n); });
+
+    qpp::qvector<int> values{1, 2, 3};
+    auto probs = values.probabilities();
+    if (probs.size() != 3)
+        return (std::cout << "fail\n", 0);
+    for (double p : probs)
+        if (std::abs(p - 1.0 / 3.0) > 1e-6)
+            return (std::cout << "fail\n", 0);
+
+    auto copy = values;
+    if (events.empty() || events.back().kind != NotificationKind::Clone)
+        return (std::cout << "fail\n", 0);
+
+    values.pop_back();
+    probs = values.probabilities();
+    if (probs.size() != 2)
+        return (std::cout << "fail\n", 0);
+    if (std::abs(probs[0] - 0.5) > 1e-6 || std::abs(probs[1] - 0.5) > 1e-6)
+        return (std::cout << "fail\n", 0);
+
+    const int measured = values.measure(1);
+    if (measured != 2)
+        return (std::cout << "fail\n", 0);
+
+    probs = values.probabilities();
+    if (probs.size() != 2)
+        return (std::cout << "fail\n", 0);
+    if (probs[0] > 1e-9 || std::abs(probs[1] - 1.0) > 1e-9)
+        return (std::cout << "fail\n", 0);
+
+    if (events.size() < 2)
+        return (std::cout << "fail\n", 0);
+    const auto& measure_event = events.back();
+    if (measure_event.kind != NotificationKind::Measurement || measure_event.index != 1)
+        return (std::cout << "fail\n", 0);
+    if (std::abs(measure_event.probability - 0.5) > 1e-6)
+        return (std::cout << "fail\n", 0);
+
+    const int total = std::accumulate(values.begin(), values.end(), 0);
+    if (total != 3)
+        return (std::cout << "fail\n", 0);
+
+    set_notification_sink({});
+    std::cout << "ok\n";
+    return 0;
+}
+"""
+        out = self.compile_and_run(code, 'qvector_superposition')
+        self.assertEqual(out, 'ok')
+
     def test_period_finding(self):
         code = r"""#include <iostream>
 #include "qpp/sim/PeriodFinding.hpp"

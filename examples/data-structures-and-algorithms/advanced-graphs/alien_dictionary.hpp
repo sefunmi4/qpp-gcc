@@ -17,8 +17,8 @@ using CharSet = std::entangled_set<char, CharHash, CharEqual>;
 using CharDegreeMap = std::entangled_map<char, std::size_t, CharHash, CharEqual>;
 using Graph = std::entangled_map<char, CharSet, CharHash, CharEqual>;
 using Indegrees = CharDegreeMap;
-using CharStack = std::qvector<char>;
-using CharQueue = std::qvector<char>;
+using CharStack = qpp::qvector<char>;
+using CharQueue = qpp::qvector<char>;
 
 struct GraphAnalysis {
     Graph adjacency;
@@ -27,15 +27,15 @@ struct GraphAnalysis {
 };
 
 struct AlienDictionaryResult {
-    std::qvector<char> order;
+    qpp::qvector<char> order;
     bool valid{true};
     bool has_cycle{false};
     bool has_prefix_conflict{false};
     bool is_unique{false};
-    std::qvector<std::qvector<char>> strongly_connected;
+    qpp::qvector<qpp::qvector<char>> strongly_connected;
 };
 
-inline GraphAnalysis build_dependency_graph(const std::qvector<std::string>& words) {
+inline GraphAnalysis build_dependency_graph(const qpp::qvector<std::string>& words) {
     GraphAnalysis analysis{};
     auto& adjacency = analysis.adjacency;
     auto& indegree = analysis.indegree;
@@ -75,7 +75,7 @@ inline void tarjan_dfs(const Graph& graph, char node, std::size_t& index,
                        CharDegreeMap& indices,
                        CharDegreeMap& lowlinks,
                        CharSet& on_stack, CharStack& stack,
-                       std::qvector<std::qvector<char>>& components) {
+                       qpp::qvector<qpp::qvector<char>>& components) {
     indices[node] = index;
     lowlinks[node] = index;
     ++index;
@@ -83,7 +83,7 @@ inline void tarjan_dfs(const Graph& graph, char node, std::size_t& index,
     on_stack.insert(node);
 
     if (const auto it = graph.find(node); it != graph.end()) {
-        std::qvector<char> neighbors(it->second.begin(), it->second.end());
+        qpp::qvector<char> neighbors(it->second.begin(), it->second.end());
         std::sort(neighbors.begin(), neighbors.end());
         for (const auto neighbor : neighbors) {
             if (!indices.count(neighbor)) {
@@ -96,7 +96,7 @@ inline void tarjan_dfs(const Graph& graph, char node, std::size_t& index,
     }
 
     if (lowlinks[node] == indices[node]) {
-        std::qvector<char> component;
+        qpp::qvector<char> component;
         while (!stack.empty()) {
             const auto top = stack.back();
             stack.pop_back();
@@ -109,15 +109,15 @@ inline void tarjan_dfs(const Graph& graph, char node, std::size_t& index,
     }
 }
 
-inline std::qvector<std::qvector<char>> strongly_connected_components(const Graph& graph) {
+inline qpp::qvector<qpp::qvector<char>> strongly_connected_components(const Graph& graph) {
     CharDegreeMap indices;
     CharDegreeMap lowlinks;
     CharSet on_stack;
     CharStack stack;
-    std::qvector<std::qvector<char>> components;
+    qpp::qvector<qpp::qvector<char>> components;
     std::size_t index = 0;
 
-    std::qvector<char> nodes;
+    qpp::qvector<char> nodes;
     nodes.reserve(graph.size());
     for (const auto& [node, _] : graph)
         nodes.push_back(node);
@@ -140,7 +140,7 @@ inline std::qvector<std::qvector<char>> strongly_connected_components(const Grap
     return components;
 }
 
-inline AlienDictionaryResult alien_dictionary(const std::qvector<std::string>& words) {
+inline AlienDictionaryResult alien_dictionary(const qpp::qvector<std::string>& words) {
     AlienDictionaryResult result{};
 
     const auto analysis = build_dependency_graph(words);
@@ -168,7 +168,7 @@ inline AlienDictionaryResult alien_dictionary(const std::qvector<std::string>& w
         ++processed;
 
         if (const auto it = analysis.adjacency.find(node); it != analysis.adjacency.end()) {
-            std::qvector<char> neighbors(it->second.begin(), it->second.end());
+            qpp::qvector<char> neighbors(it->second.begin(), it->second.end());
             std::sort(neighbors.begin(), neighbors.end());
             for (const auto neighbor : neighbors) {
                 auto& degree = indegree[neighbor];
@@ -188,7 +188,7 @@ inline AlienDictionaryResult alien_dictionary(const std::qvector<std::string>& w
     return result;
 }
 
-inline std::string describe_components(const std::qvector<std::qvector<char>>& components) {
+inline std::string describe_components(const qpp::qvector<qpp::qvector<char>>& components) {
     std::string description;
     bool first_component = true;
     for (const auto& component : components) {
